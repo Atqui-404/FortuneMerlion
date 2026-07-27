@@ -136,6 +136,7 @@
         <div id="btn-play" style="position:absolute;top:33%;left:10%;right:10%;height:27%;cursor:pointer;border-radius:30px;"></div>
       </div>
     </div>
+    <div id="btn-leaderboard-title" style="position:absolute;top:16px;right:16px;width:48px;height:48px;background:rgba(0,0,0,.45);border:2px solid rgba(255,226,52,.7);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;visibility:hidden;">🏆</div>
   </div>
 
   <!-- ── HOW TO PLAY ─────────────────────────────────────────────── -->
@@ -161,6 +162,8 @@
         <div style="font-size:18px;color:#5a3210;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;letter-spacing:1px;margin-bottom:2px;">YOUR SCORE:</div>
         <div id="final-score" style="font-size:90px;font-weight:900;color:#e91e8c;line-height:1;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-shadow:2px 2px 0 rgba(0,0,0,.1);">0</div>
       </div>
+      <!-- hint above EXIT button -->
+      <div style="position:absolute;bottom:22.5%;left:50%;transform:translateX(-50%);white-space:nowrap;pointer-events:none;font-size:11px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);">Tap EXIT to save your score &amp; enter prize draw</div>
       <!-- invisible PLAY AGAIN hit zone -->
       <div id="btn-play-again" style="position:absolute;bottom:12%;left:15%;width:29%;height:9%;cursor:pointer;border-radius:30px;"></div>
       <!-- invisible EXIT GAME hit zone -->
@@ -170,8 +173,8 @@
 
   <!-- ── ENTRY FORM ──────────────────────────────────────────────── -->
   <div class="ov" id="ov-entry" style="background:rgba(0,0,0,.6);">
-    <div style="width:400px;max-width:94vw;">
-      <!-- Green banner header matching the SCOREBOARD style -->
+    <div id="entry-card" style="width:400px;max-width:94vw;">
+      <!-- Green banner header -->
       <div style="background:linear-gradient(180deg,#3d9e28,#1e6010);border:4px solid #c8960a;border-radius:18px 18px 0 0;padding:13px 20px;text-align:center;margin-bottom:-4px;position:relative;z-index:1;box-shadow:0 -2px 0 #ffe234 inset;">
         <div style="font-size:22px;font-weight:900;color:#ffe234;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-shadow:1px 2px 3px rgba(0,0,0,.5);">SUBMIT YOUR SCORE</div>
       </div>
@@ -193,13 +196,26 @@
     </div>
   </div>
 
+  <!-- ── LEADERBOARD ───────────────────────────────────────────────── -->
+  <div class="ov" id="ov-leaderboard" style="background:rgba(0,0,0,.6);">
+    <div id="leaderboard-card" style="position:relative;width:460px;max-width:97vw;">
+      <img src="assets/ui/LEADERBOARD.png" style="width:100%;display:block;" alt="Leaderboard">
+      <!-- scores injected here, centred in the blank parchment area of the image -->
+      <div id="leader-list" style="position:absolute;top:36%;bottom:24%;left:18%;right:18%;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;box-sizing:border-box;"></div>
+      <!-- BACK TO HOME button zone (left button in PNG) -->
+      <div id="btn-close-leaderboard" style="position:absolute;bottom:12%;left:18%;width:30%;height:9%;cursor:pointer;border-radius:20px;"></div>
+      <!-- POST YOUR LOVE button zone (right button in PNG) -->
+      <div id="btn-post-love" style="position:absolute;bottom:12%;right:18%;width:30%;height:9%;cursor:pointer;border-radius:20px;"></div>
+    </div>
+  </div>
+
 </div><!-- #game-wrap -->
 
 <script>
 'use strict';
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const MOCK          = true;   // set false once server is running
+const MOCK          = false;   // set false once server is running
 const SERVER_URL    = '';     // e.g. 'https://yourapp.up.railway.app' — leave '' for same-origin
 const GAME_DURATION = 60;     // seconds
 const MAX_LIVES     = 3;
@@ -242,16 +258,16 @@ const ENTITY_DEFS = [
   { key:'pellet',     file:'Pellet.PNG',             zone:'water', isHazard:false, pts:10, scale:0.025 },
   { key:'lunch',      file:'Lunch.PNG',              zone:'road',  isHazard:false, pts:15, scale:0.037, hbScale:0.32, rolling:true },
   { key:'soda_can',   file:'Soda Can.PNG',           zone:'road',  isHazard:false, pts:10, scale:0.028, rolling:true },
-  { key:'plastic_bag',file:'Plastic Bag.PNG',        zone:'any',   isHazard:false, pts:10, scale:0.040, hbScale:0.32 },
+  { key:'plastic_bag',file:'Plastic Bag.PNG',        zone:'any',   isHazard:false, pts:10, scale:0.040, hbScale:0.45, floating:true },
   // ── HAZARDS — do NOT shoot ──
   { key:'elderly01',  file:'Elderly 01.PNG',         zone:'road', isHazard:true, scale:0.052, hbScale:0.32 },
   { key:'elderly02',  file:'Elderly 02.PNG',         zone:'road', isHazard:true, scale:0.052, hbScale:0.32 },
   { key:'man',        file:'Man sprite.png',         zone:'road', isHazard:true, scale:0.36, animated:true, hbScale:0.48 },
   { key:'woman',      file:'Woman sprite.png',       zone:'road', isHazard:true, scale:0.35, animated:true, hbScale:0.48 },
   { key:'otter',      file:'Otter sprite.png',       zone:'road', isHazard:true, scale:0.30, animated:true },
-  { key:'pigeon',     file:'Pigeon sprite.png',      zone:'road', isHazard:true, scale:0.28, animated:true },
-  { key:'crow',       file:'Crow spritesheet.png',   zone:'air',  isHazard:true, scale:0.30, animated:true },
-  { key:'myna',       file:'Myna sprite.png',        zone:'air',  isHazard:true, scale:0.30, animated:true },
+  { key:'pigeon',     file:'Pigeon sprite.png',      zone:'road', isHazard:true, scale:0.28, animated:true, hbScale:0.45 },
+  { key:'crow',       file:'Crow spritesheet.png',   zone:'air',  isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
+  { key:'myna',       file:'Myna sprite.png',        zone:'air',  isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -265,6 +281,54 @@ function showOv(id){
   if(_activeOv) _activeOv.classList.remove('on');
   _activeOv = id ? document.getElementById(id) : null;
   if(_activeOv) _activeOv.classList.add('on');
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+const MOCK_LEADERS = [
+  { name:'Aisha', score:580 }, { name:'Bryan', score:420 },
+  { name:'Celine', score:310 }, { name:'Darren', score:280 }, { name:'Evelyn', score:150 },
+];
+function ordinal(n){
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+function truncName(s){ return s.length > 8 ? s.slice(0,8) + '…' : s; }
+
+const ROW = (rank, name, sc, pink=false) => {
+  const c = pink ? '#e91e8c' : '#3a1500';
+  const f = "'Arial Rounded MT Bold',Arial,sans-serif";
+  return `<div style="display:flex;align-items:baseline;width:100%;box-sizing:border-box;padding:0;">
+    <span style="font-size:24px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:82px;">${ordinal(rank)}.</span>
+    <span style="font-size:24px;font-weight:900;color:${c};font-family:${f};flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
+    <span style="font-size:24px;font-weight:900;color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:5px;">${sc}</span>
+  </div>`;
+};
+
+async function showLeaderboard(playerName=null, playerScore=null, playerRank=null){
+  showOv('ov-leaderboard');
+  const card = document.getElementById('leaderboard-card');
+  card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
+  const listEl = document.getElementById('leader-list');
+  listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:13px;">Loading…</div>`;
+  try{
+    const rows = MOCK
+      ? await new Promise(r => setTimeout(() => r(MOCK_LEADERS), 400))
+      : await fetch(SERVER_URL + '/leaderboard').then(r => r.json());
+    const top = rows.slice(0, 5);
+    if(top.length === 0){
+      listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-size:13px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;">No scores yet — be the first!</div>`;
+      return;
+    }
+    let html = top.map((r, i) => ROW(i+1, r.name, r.score, playerRank !== null && (i+1) === playerRank)).join('');
+    // show player's own rank below a separator if outside top 5
+    if(playerName !== null && playerRank !== null && playerRank > 5){
+      html += `<div style="border-top:1px dashed #b8832a;margin:4px 0;"></div>`;
+      html += ROW(playerRank, playerName, playerScore, true);
+    }
+    listEl.innerHTML = html;
+  } catch(e){
+    listEl.innerHTML = `<div style="text-align:center;color:#c0392b;font-size:13px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;">Could not load scores.</div>`;
+  }
 }
 
 // ── Network (MOCK-able) ───────────────────────────────────────────────────────
@@ -320,6 +384,8 @@ class PreloadScene extends Phaser.Scene {
     this.load.image('life',      'assets/sprites/LIFE.png');
     this.load.image('lose_icon', 'assets/sprites/LOSE.png');
     this.load.image('fire_shot', 'assets/sprites/FIRE SHOT.png');
+    this.load.image('fx_win',   'assets/sprites/WIN.png');
+    this.load.image('fx_lost',  'assets/sprites/LOST.png');
 
     // Static entity images
     ENTITY_DEFS.filter(e => !e.animated).forEach(e =>
@@ -371,6 +437,9 @@ class GameScene extends Phaser.Scene {
     const wrap = document.getElementById('play-btn-wrap');
     wrap.style.visibility = 'visible';
     wrap.classList.add('pop-in');
+    const lbBtn = document.getElementById('btn-leaderboard-title');
+    lbBtn.style.visibility = 'visible';
+    lbBtn.classList.add('pop-in');
     this.state = 'idle';
     this._lastShot = 0;
 
@@ -480,10 +549,15 @@ class GameScene extends Phaser.Scene {
 
     const speed = Phaser.Math.Between(85, 150);
     if(def.rolling){
-      // one full clockwise rotation per ~circumference of the sprite at ground level
       const radius = (sp.displayWidth * 0.5);
       const msPerRot = (2 * Math.PI * radius) / speed * 1000;
       this.tweens.add({ targets:sp, angle:-360, duration:msPerRot, repeat:-1, ease:'Linear' });
+    }
+    if(def.floating){
+      // drift up and down like caught in wind
+      this.tweens.add({ targets:sp, y:`+=${Phaser.Math.Between(10,18)}`, duration:Phaser.Math.Between(700,1000), yoyo:true, repeat:-1, ease:'Sine.inOut' });
+      // flutter/tilt
+      this.tweens.add({ targets:sp, angle:{ from:-14, to:14 }, duration:Phaser.Math.Between(500,750), yoyo:true, repeat:-1, ease:'Sine.inOut' });
     }
     sp.setVelocity(-speed, 0);
 
@@ -514,7 +588,7 @@ class GameScene extends Phaser.Scene {
 
   // ── Hit callbacks ──────────────────────────────────────────────────────────
   _hitTrash(shot, trash){
-    if(!shot.active || !trash.active) return; // guard: overlap fires every frame
+    if(!shot.active || !trash.active) return;
     const def = trash.getData('def');
     const pts = def?.pts ?? 10;
     const tx = trash.x, ty = trash.y;
@@ -522,17 +596,18 @@ class GameScene extends Phaser.Scene {
     trash.destroy();
     score += pts;
     updateHUD();
-    this._popText(tx, ty, `+${pts}`, '#ffe600');
+    this._popFx(tx, ty, 'fx_win', 0.07, 600, 80);
+    this._popText(tx + 55, ty, `+${pts}`, '#ffe600');
   }
 
   _hitHazard(shot, hazard){
-    if(!shot.active) return; // guard
+    if(!shot.active) return;
     shot.destroy();
     lives--;
     updateHUD();
     this.cameras.main.flash(260, 255, 30, 30, true);
     this.cameras.main.shake(200, 0.011);
-    this._popText(hazard.x, hazard.y - 28, 'OOPS!', '#ff4455');
+    this._popFx(hazard.x - 40, hazard.y, 'fx_lost', 0.07, 1400);
     if(lives <= 0) this.time.delayedCall(550, () => this._endGame());
   }
 
@@ -561,8 +636,41 @@ class GameScene extends Phaser.Scene {
       color, stroke:'#000', strokeThickness:4,
     }).setOrigin(0.5).setDepth(600);
     this.tweens.add({
-      targets:t, y: y - 70, alpha:0, duration:900, ease:'Power2',
+      targets:t, y: y - 70, alpha:0, duration:1400, ease:'Power2',
       onComplete: () => t.destroy(),
+    });
+  }
+
+  // Pops an image asset at (x,y), scales in then floats up and fades
+  _popFx(x, y, key, scale = 0.15, fadeDuration = 600, popDuration = 180){
+    const img = this.add.image(x, y, key).setScale(0).setDepth(601);
+    this.tweens.add({
+      targets: img, scaleX: scale, scaleY: scale,
+      duration: popDuration, ease: 'Back.Out',
+      onComplete: () => {
+        this.tweens.add({
+          targets: img, y: y - 80, alpha: 0,
+          duration: fadeDuration, ease: 'Power2',
+          onComplete: () => img.destroy(),
+        });
+      },
+    });
+  }
+
+  // Pops the ♻ recycling symbol at (x,y)
+  _popRecycle(x, y){
+    const t = this.add.text(x, y, '♻', { fontSize:'52px' })
+      .setOrigin(0.5).setDepth(601).setScale(0);
+    this.tweens.add({
+      targets: t, scaleX: 1, scaleY: 1,
+      duration: 200, ease: 'Back.Out',
+      onComplete: () => {
+        this.tweens.add({
+          targets: t, y: y - 80, alpha: 0,
+          duration: 700, ease: 'Power2',
+          onComplete: () => t.destroy(),
+        });
+      },
     });
   }
 
@@ -626,11 +734,14 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
 });
 
 document.getElementById('btn-exit').addEventListener('click', () => {
-  // Clear form and show entry so player can optionally submit score
   document.getElementById('inp-name').value  = '';
   document.getElementById('inp-phone').value = '';
   document.getElementById('entry-err').textContent = '';
   showOv('ov-entry');
+  const card = document.getElementById('entry-card');
+  card.classList.remove('pop-in');
+  void card.offsetWidth;
+  card.classList.add('pop-in');
 });
 
 document.getElementById('btn-submit').addEventListener('click', async () => {
@@ -651,7 +762,7 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   try{
     const res = await apiPost('/score', { name, phone, score });
     if(res.ok){
-      showOv('ov-title');
+      showLeaderboard(name, res.score ?? score, res.rank);
     } else {
       errEl.textContent = escHtml(res.error || 'Something went wrong.');
     }
@@ -663,6 +774,19 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
 });
 
 document.getElementById('btn-skip').addEventListener('click', () => {
+  showOv('ov-title');
+});
+
+document.getElementById('btn-leaderboard-title').addEventListener('click', () => {
+  showLeaderboard();
+});
+
+document.getElementById('btn-close-leaderboard').addEventListener('click', () => {
+  showOv('ov-title');
+});
+
+document.getElementById('btn-post-love').addEventListener('click', () => {
+  // TODO: charm selection screen
   showOv('ov-title');
 });
 </script>

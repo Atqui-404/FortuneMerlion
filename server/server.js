@@ -37,7 +37,15 @@ db.exec(`
     phone      TEXT    NOT NULL,
     score      INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
+  );
+  -- Deduplicate existing rows: keep the highest score per phone before enforcing uniqueness
+  DELETE FROM scores WHERE id NOT IN (
+    SELECT id FROM (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY phone ORDER BY score DESC, id DESC) AS rn
+      FROM scores
+    ) WHERE rn = 1
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_phone ON scores(phone);
 `);
 
 // ─── Validation helpers ────────────────────────────────────────────────────
@@ -58,6 +66,7 @@ const limiter10 = rateLimit({
 
 // ─── POST /score ───────────────────────────────────────────────────────────
 app.post('/score', limiter10, (req, res) => {
+  try {
   const { name, phone, score } = req.body || {};
 
   if (!name || typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 20)
@@ -68,13 +77,25 @@ app.post('/score', limiter10, (req, res) => {
     return res.status(400).json({ error: 'Invalid score' });
 
   const cleanName = stripHtml(name.trim());
-  db.prepare('INSERT INTO scores (name, phone, score) VALUES (?, ?, ?)').run(cleanName, phone, score);
+  db.prepare(`
+    INSERT INTO scores (name, phone, score) VALUES (?, ?, ?)
+    ON CONFLICT(phone) DO UPDATE SET
+      name  = excluded.name,
+      score = excluded.score
+    WHERE excluded.score > scores.score
+  `).run(cleanName, phone, score);
 
-  const rank  = db.prepare('SELECT COUNT(*) AS cnt FROM scores WHERE score > ?').get(score).cnt + 1;
+  // Rank = number of distinct players with a strictly higher score + 1
+  const storedScore = db.prepare('SELECT score FROM scores WHERE phone = ?').get(phone).score;
+  const rank  = db.prepare('SELECT COUNT(*) AS cnt FROM scores WHERE score > ?').get(storedScore).cnt + 1;
   const count = db.prepare('SELECT COUNT(*) AS cnt FROM scores').get().cnt;
   io.emit('player-count', count);
 
-  res.json({ ok: true, rank });
+  res.json({ ok: true, rank, score: storedScore });
+  } catch(err) {
+    console.error('POST /score error:', err.message);
+    res.status(500).json({ error: 'Server error — please try again.' });
+  }
 });
 
 // ─── GET /leaderboard  (phone NEVER returned) ──────────────────────────────
