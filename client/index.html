@@ -212,14 +212,21 @@
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:430px;max-width:96vw;background:#fdf3dc;border:6px solid #8b5e1a;border-radius:18px;box-shadow:0 6px 28px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.35);padding:20px 24px 16px;text-align:center;margin-top:10px;">
-      <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:28px;font-weight:900;color:#6b3c10;text-shadow:0 1px 0 rgba(255,255,255,.5);letter-spacing:1px;">POST &amp; POSE</div>
-      <div id="charm-name-label" style="background:#c8860a;border-radius:10px;padding:4px 20px;display:inline-block;color:#fff;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:17px;font-weight:900;margin:6px 0 10px;box-shadow:0 3px 0 #8b5e1a;min-width:120px;"></div>
-      <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;margin-bottom:10px;">— PICK YOUR CHARM —</div>
-      <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 8px;"></div>
-      <div id="charm-err" style="color:#c0392b;font-size:13px;min-height:18px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;margin:2px 0;"></div>
-      <button id="btn-post-charm" class="btn btn-green" style="width:180px;font-size:20px;letter-spacing:1px;margin:2px auto 10px;display:block;">POST</button>
-      <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.5;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
+    <div id="charm-card" style="position:relative;z-index:1;width:480px;max-width:100%;">
+      <img src="assets/ui/PP Screen.png" style="width:100%;height:780px;object-fit:cover;object-position:center top;display:block;" alt="Post &amp; Pose">
+      <!-- Content: name, charm grid, disclaimer — POST button is outside this flow -->
+      <div style="position:absolute;top:44%;bottom:11%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
+        <div id="charm-name-label" style="background:#c8860a;border-radius:8px;padding:4px 20px;color:#fff;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:16px;font-weight:900;box-shadow:0 2px 0 #8b5e1a;white-space:nowrap;flex-shrink:0;"></div>
+        <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
+        <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:10px;flex-shrink:0;"></div>
+        <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
+        <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
+      </div>
+      <!-- POST button — hangs half off the bottom of the PP frame -->
+      <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:240px;z-index:10;">
+        <img src="assets/ui/Post.png" style="width:100%;display:block;pointer-events:none;" alt="Post">
+        <div id="btn-post-charm" style="position:absolute;inset:0;cursor:pointer;border-radius:22px;"></div>
+      </div>
     </div>
   </div>
 
@@ -386,19 +393,19 @@ function showCharm(){
   selectedCharm = null;
   document.getElementById('charm-name-label').textContent = submittedName || 'PLAYER';
   document.getElementById('charm-err').textContent = '';
-  document.getElementById('btn-post-charm').disabled = false;
-  document.getElementById('btn-post-charm').textContent = 'POST';
+  document.getElementById('btn-post-charm').style.pointerEvents = 'auto';
+  document.getElementById('btn-post-charm').style.opacity = '1';
 
   const grid = document.getElementById('charm-grid');
   grid.innerHTML = '';
   CHARMS.forEach(c => {
     const wrap = document.createElement('div');
     wrap.dataset.key = c.key;
-    wrap.style.cssText = 'cursor:pointer;border-radius:14px;border:3px solid transparent;transition:border-color .15s,box-shadow .15s;overflow:hidden;';
+    wrap.style.cssText = 'cursor:pointer;border-radius:10px;border:3px solid transparent;transition:border-color .15s,box-shadow .15s;line-height:0;';
     const img = document.createElement('img');
     img.src = `assets/sprites/${c.file}`;
     img.alt = c.label;
-    img.style.cssText = 'width:100%;display:block;';
+    img.style.cssText = 'height:95px;width:auto;display:block;border-radius:8px;pointer-events:none;';
     wrap.appendChild(img);
     wrap.addEventListener('click', () => {
       grid.querySelectorAll('[data-key]').forEach(el => {
@@ -868,7 +875,7 @@ document.getElementById('btn-post-charm').addEventListener('click', async () => 
     return;
   }
   const btn = document.getElementById('btn-post-charm');
-  btn.disabled = true; btn.textContent = 'Posting…';
+  btn.style.pointerEvents = 'none'; btn.style.opacity = '0.5';
   try{
     await apiPost('/charm', { name: submittedName, charm: selectedCharm });
   } catch(e){ /* fire-and-forget — still show finish screen */ }
