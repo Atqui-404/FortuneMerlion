@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,interactive-widget=overlays-content">
   <title>Fortune Merlion: Blooming Hearts</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -206,7 +206,7 @@
 
   <!-- ── ENTRY FORM ──────────────────────────────────────────────── -->
   <div class="ov" id="ov-entry" style="background:rgba(0,0,0,.6);">
-    <div id="entry-card" style="position:relative;width:min(97%,580px);margin-right:2%;">
+    <div id="entry-card" style="position:relative;width:min(96%,560px);margin-right:2%;">
       <img src="assets/ui/SUBMIT.png" style="width:100%;display:block;" alt="Submit Your Score">
       <div style="position:absolute;top:27%;bottom:7%;left:18%;right:18%;display:flex;flex-direction:column;justify-content:center;">
         <div class="form-g">
@@ -232,7 +232,7 @@
     <div id="leaderboard-card" style="position:relative;width:min(96%,560px);">
       <img src="assets/ui/LEADERBOARD.png" style="width:100%;display:block;" alt="Leaderboard">
       <!-- scores injected here, centred in the blank parchment area of the image -->
-      <div id="leader-list" style="position:absolute;top:32%;bottom:6%;left:14%;right:14%;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;overflow:hidden;box-sizing:border-box;"></div>
+      <div id="leader-list" style="position:absolute;top:32%;bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;overflow:hidden;box-sizing:border-box;"></div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
     <div id="leaderboard-btn-row" class="img-btn-row" style="margin-top:20px;"></div>
@@ -241,8 +241,8 @@
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);">
-      <img src="assets/ui/PP Screen.png" style="width:100%;height:780px;object-fit:cover;object-position:center top;display:block;" alt="Post &amp; Pose">
+    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);height:92%;">
+      <img src="assets/ui/PP Screen.png" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="Post &amp; Pose">
       <!-- Content: name, charm grid, disclaimer — buttons are outside this flow -->
       <div style="position:absolute;top:44%;bottom:11%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
         <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
@@ -368,10 +368,10 @@ function truncName(s){ return s.length > 8 ? s.slice(0,8) + '…' : s; }
 const ROW = (rank, name, sc, pink=false) => {
   const c = pink ? '#e91e8c' : '#3a1500';
   const f = "'Arial Rounded MT Bold',Arial,sans-serif";
-  return `<div style="display:flex;align-items:baseline;width:100%;box-sizing:border-box;padding:0;">
-    <span style="font-size:26px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:88px;">#${String(rank).padStart(2,'0')}</span>
-    <span style="font-size:26px;font-weight:900;color:${c};font-family:${f};flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
-    <span style="font-size:26px;font-weight:900;color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:5px;">${sc}</span>
+  return `<div style="display:flex;align-items:baseline;width:100%;max-width:100%;box-sizing:border-box;padding:0;overflow:hidden;">
+    <span style="font-size:19px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:52px;">#${String(rank).padStart(2,'0')}</span>
+    <span style="font-size:19px;font-weight:900;color:${c};font-family:${f};flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
+    <span style="font-size:19px;font-weight:900;color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:5px;">${sc}</span>
   </div>`;
 };
 
