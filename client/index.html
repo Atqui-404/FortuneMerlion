@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
   <title>Fortune Merlion: Blooming Hearts</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html,body{
       width:100%;height:100%;
       background:#1a1a2e;
@@ -14,11 +15,22 @@
       display:flex;align-items:center;justify-content:center;
       touch-action:none;
     }
+    /* Phone-shaped frame: always keeps the 480:845 portrait ratio and scales
+       to fit whatever viewport it's in (small phone, big phone, tablet,
+       laptop) — capped so it doesn't stretch into a full-bleed rectangle on
+       wide/tall screens like an iPad or desktop browser. */
     #game-wrap{
       position:relative;
-      width:480px;height:845px;
+      aspect-ratio:480/845;
+      width:min(94vw, 94vh * 480 / 845, 600px);
       overflow:hidden;
     }
+
+    /* Standard visual size for every image-based button (matches PLAY's rendered pill width) */
+    :root{ --btn-w:195px; }
+    .img-btn{ width:var(--btn-w); cursor:pointer; flex-shrink:0; -webkit-user-select:none;user-select:none;-webkit-touch-callout:none; }
+    .img-btn img{ width:100%; display:block; pointer-events:none; }
+    .img-btn-row{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; align-items:center; max-width:92%; }
 
     /* ── Overlays ─────────────────────────────────────────────────── */
     .ov{
@@ -50,6 +62,22 @@
       text-shadow:2px 2px 0 #000,-1px -1px 0 #000;
       font-family:'Arial Rounded MT Bold',Arial,sans-serif;min-width:44px;text-align:center;
     }
+
+    /* ── Fire button ─────────────────────────────────────────────── */
+    /* left:47% matches mX (merlion's shot-origin X in GameScene) rather than
+       dead-center, since the merlion sprite itself isn't centered in GAME.jpg */
+    #btn-fire-wrap{
+      position:absolute;left:47%;bottom:34px;
+      transform:translateX(-50%);
+      width:108px;display:none;z-index:60;cursor:pointer;
+      -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    }
+    #btn-fire-wrap.on{display:block;}
+    #btn-fire-wrap img{width:100%;display:block;pointer-events:none;}
+    #btn-fire-wrap:active{transform:translateX(-50%) scale(.92);}
+
+    /* Scoreboard panel moved higher on screen */
+    #ov-scoreboard{ justify-content:flex-start; padding-top:20px; }
 
     /* ── Wooden panel ────────────────────────────────────────────── */
     .panel{
@@ -89,16 +117,17 @@
     .btn-row{display:flex;gap:14px;justify-content:center;margin-top:16px;}
 
     /* ── Entry form ──────────────────────────────────────────────── */
-    .form-g{margin-bottom:14px;text-align:left;}
-    .form-g label{display:block;font-size:13px;color:#5a3210;margin-bottom:4px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;}
+    .form-g{margin-bottom:8px;text-align:center;}
+    .form-g label{display:block;font-size:14px;color:#5a3210;margin-bottom:2px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;}
     .form-g input{
-      width:100%;padding:10px 12px;
+      width:95%;padding:12px 14px;
       border:2px solid #b8832a;border-radius:8px;
-      font-size:16px;background:#fffbf0;color:#333;outline:none;
+      font-size:17px;background:#fffbf0;color:#333;outline:none;
+      text-align:center;
     }
     .form-g input:focus{border-color:#e8a030;}
-    .err{color:#c0392b;font-size:13px;min-height:18px;margin-bottom:8px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;}
-    .pdpa{font-size:11px;color:#7b5020;line-height:1.55;margin:8px 0 12px;text-align:left;}
+    .err{color:#c0392b;font-size:14px;min-height:18px;margin-bottom:4px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-align:center;}
+    .pdpa{font-size:12px;color:#7b5020;line-height:1.4;margin:4px 0 6px;text-align:center;}
 
     /* ── Score display ───────────────────────────────────────────── */
     #final-score{
@@ -125,6 +154,11 @@
     <div id="hud-score" class="hud-num" style="color:#e91e8c;">0</div>
   </div>
 
+  <!-- ── FIRE BUTTON ────────────────────────────────────────────── -->
+  <div id="btn-fire-wrap">
+    <img src="assets/ui/FIRE BUTTON.png" alt="Fire">
+  </div>
+
   <!-- ── TITLE ──────────────────────────────────────────────────── -->
   <div class="ov on" id="ov-title">
     <!-- Logo + button grouped and centred together at screen middle -->
@@ -141,45 +175,40 @@
 
   <!-- ── HOW TO PLAY ─────────────────────────────────────────────── -->
   <div class="ov" id="ov-tutorial" style="background:rgba(0,0,0,.55);">
-    <div id="tutorial-card" style="position:relative;width:460px;max-width:97vw;">
+    <div id="tutorial-card" style="position:relative;width:min(97%,540px);">
       <img src="assets/ui/HOW TO PLAY.png" style="width:100%;display:block;" alt="How to Play">
       <!-- invisible hit zone over the X button drawn in the image (top-right) -->
       <div id="btn-close-tutorial"
-        style="position:absolute;top:7%;right:12%;width:13%;padding-bottom:12%;cursor:pointer;border-radius:50%;"></div>
+        style="position:absolute;top:4%;right:12%;width:15%;padding-bottom:12%;cursor:pointer;border-radius:50%;"></div>
       <!-- invisible hit zone over the START GAME button drawn in the image (bottom centre) -->
       <div id="btn-start-game"
-        style="position:absolute;bottom:11%;left:25%;right:25%;height:10%;cursor:pointer;border-radius:25px;"></div>
+        style="position:absolute;bottom:3%;left:26%;right:26%;height:10%;cursor:pointer;border-radius:25px;"></div>
     </div>
   </div>
 
   <!-- ── SCOREBOARD ─────────────────────────────────────────────── -->
   <div class="ov" id="ov-scoreboard" style="background:rgba(0,0,0,.6);">
-    <div style="position:relative;width:460px;max-width:97vw;">
-      <img src="assets/ui/SCORE BOARD.png" style="width:100%;display:block;" alt="Scoreboard">
-      <!-- score overlaid in the blank parchment area — centred vertically between header and buttons -->
-      <div style="position:absolute;top:25%;bottom:16%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
-        <div style="font-size:42px;color:#1a0a00;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:900;line-height:1;margin-bottom:10px;text-shadow:1px 1px 0 rgba(255,255,255,.4);">GAME OVER</div>
-        <div style="font-size:18px;color:#5a3210;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;letter-spacing:1px;margin-bottom:2px;">YOUR SCORE:</div>
-        <div id="final-score" style="font-size:90px;font-weight:900;color:#e91e8c;line-height:1;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-shadow:2px 2px 0 rgba(0,0,0,.1);">0</div>
+    <div style="position:relative;width:min(88%,440px);">
+      <img src="assets/ui/SCOREBOARD.png" style="width:100%;display:block;" alt="Scoreboard">
+      <!-- score overlaid in the blank parchment area -->
+      <div style="position:absolute;top:26%;bottom:6%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
+        <div style="font-size:38px;color:#1a0a00;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:900;line-height:1;margin-bottom:8px;text-shadow:1px 1px 0 rgba(255,255,255,.4);">GAME OVER</div>
+        <div style="font-size:16px;color:#5a3210;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;letter-spacing:1px;margin-bottom:2px;">YOUR SCORE:</div>
+        <div id="final-score" style="font-size:78px;font-weight:900;color:#e91e8c;line-height:1;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-shadow:2px 2px 0 rgba(0,0,0,.1);">0</div>
       </div>
-      <!-- hint above EXIT button -->
-      <div style="position:absolute;bottom:22.5%;left:50%;transform:translateX(-50%);white-space:nowrap;pointer-events:none;font-size:11px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9);">Tap EXIT to save your score &amp; enter prize draw</div>
-      <!-- invisible PLAY AGAIN hit zone -->
-      <div id="btn-play-again" style="position:absolute;bottom:12%;left:15%;width:29%;height:9%;cursor:pointer;border-radius:30px;"></div>
-      <!-- invisible EXIT GAME hit zone -->
-      <div id="btn-exit"       style="position:absolute;bottom:12%;left:55%;width:29%;height:9%;cursor:pointer;border-radius:30px;"></div>
+    </div>
+    <!-- Buttons live below the panel, well clear of the previous screen's fire button -->
+    <div class="img-btn-row" style="margin-top:18px;">
+      <div id="btn-play-again" class="img-btn"><img src="assets/ui/PLAY AGAIN.png" alt="Play Again"></div>
+      <div id="btn-submit-score" class="img-btn"><img src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
     </div>
   </div>
 
   <!-- ── ENTRY FORM ──────────────────────────────────────────────── -->
   <div class="ov" id="ov-entry" style="background:rgba(0,0,0,.6);">
-    <div id="entry-card" style="width:400px;max-width:94vw;">
-      <!-- Green banner header -->
-      <div style="background:linear-gradient(180deg,#3d9e28,#1e6010);border:4px solid #c8960a;border-radius:18px 18px 0 0;padding:13px 20px;text-align:center;margin-bottom:-4px;position:relative;z-index:1;box-shadow:0 -2px 0 #ffe234 inset;">
-        <div style="font-size:22px;font-weight:900;color:#ffe234;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-shadow:1px 2px 3px rgba(0,0,0,.5);">SUBMIT YOUR SCORE</div>
-      </div>
-      <!-- Parchment body -->
-      <div style="background:linear-gradient(180deg,#fdf3dc,#f5e4b8);border:4px solid #c8960a;border-top:none;border-radius:0 0 20px 20px;padding:20px 24px 24px;box-shadow:0 8px 32px rgba(0,0,0,.55);">
+    <div id="entry-card" style="position:relative;width:min(97%,580px);margin-right:2%;">
+      <img src="assets/ui/SUBMIT.png" style="width:100%;display:block;" alt="Submit Your Score">
+      <div style="position:absolute;top:27%;bottom:7%;left:18%;right:18%;display:flex;flex-direction:column;justify-content:center;">
         <div class="form-g">
           <label>Name (max 20 characters)</label>
           <input type="text" id="inp-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -190,42 +219,43 @@
         </div>
         <p class="pdpa">Your mobile number is collected solely to contact the winner. It will never be displayed publicly and will be deleted within 30 days after the event.</p>
         <div class="err" id="entry-err"></div>
-        <button class="btn btn-green" id="btn-submit" style="width:100%;margin-bottom:10px;font-size:18px;padding:14px 0;">SUBMIT SCORE</button>
-        <button class="btn" id="btn-skip" style="background:linear-gradient(180deg,#d5c0a0,#b89a60);color:#3a1500;width:100%;padding:12px 0;border:3px solid #8b5e1a;box-shadow:0 3px 0 #5a3a10;font-size:15px;">Skip — go back to home</button>
       </div>
+    </div>
+    <div class="img-btn-row" style="margin-top:18px;flex-direction:column;gap:12px;margin-right:2%;">
+      <div id="btn-submit" class="img-btn"><img id="img-submit-btn" src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
+      <div id="btn-skip" class="img-btn"><img src="assets/ui/SKIP.png" alt="Skip — back to home"></div>
     </div>
   </div>
 
   <!-- ── LEADERBOARD ───────────────────────────────────────────────── -->
   <div class="ov" id="ov-leaderboard" style="background:rgba(0,0,0,.6);">
-    <div id="leaderboard-card" style="position:relative;width:460px;max-width:97vw;">
+    <div id="leaderboard-card" style="position:relative;width:min(96%,560px);">
       <img src="assets/ui/LEADERBOARD.png" style="width:100%;display:block;" alt="Leaderboard">
       <!-- scores injected here, centred in the blank parchment area of the image -->
-      <div id="leader-list" style="position:absolute;top:36%;bottom:24%;left:18%;right:18%;display:flex;flex-direction:column;justify-content:flex-start;gap:2px;overflow:hidden;box-sizing:border-box;"></div>
-      <!-- BACK TO HOME button zone (left button in PNG) -->
-      <div id="btn-close-leaderboard" style="position:absolute;bottom:12%;left:18%;width:30%;height:9%;cursor:pointer;border-radius:20px;"></div>
-      <!-- POST YOUR LOVE button zone (right button in PNG) -->
-      <div id="btn-post-love" style="position:absolute;bottom:12%;right:18%;width:30%;height:9%;cursor:pointer;border-radius:20px;"></div>
+      <div id="leader-list" style="position:absolute;top:32%;bottom:6%;left:14%;right:14%;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;overflow:hidden;box-sizing:border-box;"></div>
     </div>
+    <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
+    <div id="leaderboard-btn-row" class="img-btn-row" style="margin-top:20px;"></div>
   </div>
 
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:480px;max-width:100%;">
+    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);">
       <img src="assets/ui/PP Screen.png" style="width:100%;height:780px;object-fit:cover;object-position:center top;display:block;" alt="Post &amp; Pose">
-      <!-- Content: name, charm grid, disclaimer — POST button is outside this flow -->
+      <!-- Content: name, charm grid, disclaimer — buttons are outside this flow -->
       <div style="position:absolute;top:44%;bottom:11%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
-        <div id="charm-name-label" style="background:#c8860a;border-radius:8px;padding:4px 20px;color:#fff;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:16px;font-weight:900;box-shadow:0 2px 0 #8b5e1a;white-space:nowrap;flex-shrink:0;"></div>
+        <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
+          style="width:70%;text-align:center;padding:6px 12px;border:2px solid #b8832a;border-radius:8px;font-size:15px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
         <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
         <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:10px;flex-shrink:0;"></div>
         <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
-        <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
+        <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
       </div>
-      <!-- POST button — hangs half off the bottom of the PP frame -->
-      <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);width:240px;z-index:10;">
-        <img src="assets/ui/Post.png" style="width:100%;display:block;pointer-events:none;" alt="Post">
-        <div id="btn-post-charm" style="position:absolute;inset:0;cursor:pointer;border-radius:22px;"></div>
+      <!-- POST + BACK TO HOME — hang half off the bottom of the PP frame -->
+      <div class="img-btn-row" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);z-index:10;white-space:nowrap;">
+        <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
+        <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
       </div>
     </div>
   </div>
@@ -233,7 +263,7 @@
   <!-- ── FINISH (published confirmation) ───────────────────────────── -->
   <div class="ov" id="ov-finish">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div style="position:relative;z-index:1;width:480px;max-width:100%;">
+    <div style="position:relative;z-index:1;width:min(100%,520px);">
       <img src="assets/ui/FINISH.png" style="width:100%;display:block;" alt="Published">
       <!-- invisible zone over the CLOSED button drawn in the PNG -->
       <div id="btn-close-finish" style="position:absolute;bottom:10%;left:27%;right:27%;height:8%;cursor:pointer;border-radius:25px;"></div>
@@ -252,6 +282,11 @@ const GAME_DURATION = 60;     // seconds
 const MAX_LIVES     = 3;
 const FIRE_RATE_MS  = 220;    // minimum ms between shots
 
+// #game-wrap sizing is handled entirely by CSS now (aspect-ratio + min(),
+// see the stylesheet) — it always keeps the 480:845 phone shape and fits
+// the real viewport without needing JS. Phaser's Scale.FIT + autoCenter
+// tracks that CSS-sized parent on its own.
+
 // ── Zone Y-positions (adjust to match where things sit in GAME.jpg) ───────────
 // Tip: set  debug:true  in Phaser arcade config below, then fine-tune these
 const ZONE_Y = {
@@ -259,6 +294,7 @@ const ZONE_Y = {
   road:  [400, 405, 408],       // red running + cycling track
   air:   [245, 285, 313, 340, 367],  // just above waterway — birds visible here, not hidden in sky
 };
+const MAX_SPAWN_Y = 430; // nothing may spawn below this — keeps entities off the merlion's head
 
 // ── Spritesheet frame sizes ───────────────────────────────────────────────────
 // If an animation looks wrong: frameW = image_total_width / num_frames
@@ -280,16 +316,20 @@ const SHEETS = {
 // Scale guide for 3200×3200 static sprites (content fills ~50% = ~1600px):
 //   60px target  → scale 0.037   |   80px → 0.050   |   100px → 0.062
 // Animated sprites have tight frames (no padding) so scale is straightforward.
+//
+// Score system: higher lane + faster speed → higher points. Plastic bag spawns
+// highest, moves fastest, and is worth the most (50); everything else is graded
+// down from there in two bands (water, then road) by minSpd/maxSpd and pts.
 const ENTITY_DEFS = [
-  // ── TRASH — shoot these ──
-  { key:'bottle',     file:'Bottle.PNG',           zone:'road', isHazard:false, pts:10, scale:0.032, hbScale:0.32, rolling:true },
-  { key:'bottles',    file:'Bottles.PNG',           zone:'water', isHazard:false, pts:20, scale:0.037, hbScale:0.32 },
-  { key:'bottle_sub', file:'Bottle Submerged.PNG',  zone:'water', isHazard:false, pts:10, scale:0.037, hbScale:0.32 },
-  { key:'blind_box',  file:'Blind Box.PNG',          zone:'water', isHazard:false, pts:30, scale:0.040, hbScale:0.32 },
-  { key:'pellet',     file:'Pellet.PNG',             zone:'water', isHazard:false, pts:10, scale:0.025 },
-  { key:'lunch',      file:'Lunch.PNG',              zone:'road',  isHazard:false, pts:15, scale:0.037, hbScale:0.32, rolling:true },
-  { key:'soda_can',   file:'Soda Can.PNG',           zone:'road',  isHazard:false, pts:10, scale:0.028, rolling:true },
-  { key:'plastic_bag',file:'Plastic Bag.PNG',        zone:'any',   isHazard:false, pts:10, scale:0.040, hbScale:0.45, floating:true },
+  // ── TRASH — shoot these ── (ordered high/fast/valuable → low/slow/cheap)
+  { key:'plastic_bag',file:'Plastic Bag.PNG',        zoneY:[250,265,280], isHazard:false, pts:50, minSpd:180, maxSpd:200, scale:0.040, hbScale:0.45, floating:true },
+  { key:'blind_box',  file:'Blind Box.PNG',          zone:'water', isHazard:false, pts:35, minSpd:150, maxSpd:170, scale:0.040, hbScale:0.32 },
+  { key:'bottles',    file:'Bottles.PNG',            zone:'water', isHazard:false, pts:28, minSpd:130, maxSpd:150, scale:0.037, hbScale:0.32 },
+  { key:'bottle_sub', file:'Bottle Submerged.PNG',   zone:'water', isHazard:false, pts:20, minSpd:110, maxSpd:130, scale:0.037, hbScale:0.32 },
+  { key:'pellet',     file:'Pellet.PNG',             zone:'water', isHazard:false, pts:15, minSpd:95,  maxSpd:115, scale:0.025 },
+  { key:'lunch',      file:'Lunch.PNG',              zone:'road',  isHazard:false, pts:12, minSpd:80,  maxSpd:100, scale:0.037, hbScale:0.32, rolling:true },
+  { key:'bottle',     file:'Bottle.PNG',             zone:'road',  isHazard:false, pts:10, minSpd:70,  maxSpd:90,  scale:0.032, hbScale:0.32, rolling:true },
+  { key:'soda_can',   file:'Soda Can.PNG',           zone:'road',  isHazard:false, pts:8,  minSpd:60,  maxSpd:80,  scale:0.020, rolling:true },
   // ── HAZARDS — do NOT shoot ──
   { key:'elderly01',  file:'Elderly 01.PNG',         zone:'road', isHazard:true, scale:0.052, hbScale:0.32 },
   { key:'elderly02',  file:'Elderly 02.PNG',         zone:'road', isHazard:true, scale:0.052, hbScale:0.32 },
@@ -297,7 +337,7 @@ const ENTITY_DEFS = [
   { key:'woman',      file:'Woman sprite.png',       zone:'road', isHazard:true, scale:0.35, animated:true, hbScale:0.48 },
   { key:'otter',      file:'Otter sprite.png',       zone:'road', isHazard:true, scale:0.30, animated:true },
   { key:'pigeon',     file:'Pigeon sprite.png',      zone:'road', isHazard:true, scale:0.28, animated:true, hbScale:0.45 },
-  { key:'crow',       file:'Crow spritesheet.png',   zone:'air',  isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
+  { key:'crow',       file:'Crow spritesheet.png',   zoneY:[225,240,255], isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
   { key:'myna',       file:'Myna sprite.png',        zone:'air',  isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
 ];
 
@@ -329,18 +369,40 @@ const ROW = (rank, name, sc, pink=false) => {
   const c = pink ? '#e91e8c' : '#3a1500';
   const f = "'Arial Rounded MT Bold',Arial,sans-serif";
   return `<div style="display:flex;align-items:baseline;width:100%;box-sizing:border-box;padding:0;">
-    <span style="font-size:24px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:82px;">${ordinal(rank)}.</span>
-    <span style="font-size:24px;font-weight:900;color:${c};font-family:${f};flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
-    <span style="font-size:24px;font-weight:900;color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:5px;">${sc}</span>
+    <span style="font-size:26px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:88px;">#${String(rank).padStart(2,'0')}</span>
+    <span style="font-size:26px;font-weight:900;color:${c};font-family:${f};flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
+    <span style="font-size:26px;font-weight:900;color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:5px;">${sc}</span>
   </div>`;
 };
 
-async function showLeaderboard(playerName=null, playerScore=null, playerRank=null){
+// Standalone image button (same visual size as PLAY across every screen — see --btn-w)
+function makeImgBtn(src, alt, onClick){
+  const wrap = document.createElement('div');
+  wrap.className = 'img-btn';
+  const img = document.createElement('img');
+  img.src = src; img.alt = alt;
+  wrap.appendChild(img);
+  wrap.addEventListener('click', onClick);
+  return wrap;
+}
+
+// fromScore: true when reached right after submitting a score (shows Post & Pose too);
+// false/omitted when reached via the title-screen trophy icon (Back to Home only —
+// there's no submittedName context to post with in that flow).
+async function showLeaderboard(playerName=null, playerScore=null, playerRank=null, fromScore=false){
   showOv('ov-leaderboard');
   const card = document.getElementById('leaderboard-card');
   card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
   const listEl = document.getElementById('leader-list');
   listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:13px;">Loading…</div>`;
+
+  const btnRow = document.getElementById('leaderboard-btn-row');
+  btnRow.innerHTML = '';
+  btnRow.appendChild(makeImgBtn('assets/ui/BACK TO HOME.png', 'Back to Home', () => showOv('ov-title')));
+  if(fromScore && submittedName){
+    btnRow.appendChild(makeImgBtn('assets/ui/POST AND POSE.png', 'Post & Pose', () => showCharm()));
+  }
+
   try{
     const rows = MOCK
       ? await new Promise(r => setTimeout(() => r(MOCK_LEADERS), 400))
@@ -378,6 +440,25 @@ let score = 0, lives = MAX_LIVES, timer = GAME_DURATION;
 let gameSceneRef = null;
 let submittedName = '';
 
+// ── Charm broadcast ETA ─────────────────────────────────────────────────────
+// There's no real charm-queue-depth endpoint on the backend yet (display.html /
+// the broadcast display don't exist in this repo), so per the debrief's
+// "simpler interim measure" we approximate queue depth from the existing
+// player-count socket event (total scores submitted) as a rough proxy.
+let latestPlayerCount = 0;
+if(!MOCK && typeof io !== 'undefined'){
+  try{
+    const socket = io(SERVER_URL);
+    socket.on('player-count', c => { latestPlayerCount = c; });
+  } catch(e){ /* socket unavailable — ETA just falls back to the 1-minute floor */ }
+}
+function estimateQueueMinutes(){
+  const HOLD_SEC = 15;        // ~ time each charm holds on the display, per the debrief
+  const PROXY_DIVISOR = 10;   // rough assumption: ~1 in 10 recent players are "ahead in queue"
+  const depth = Math.max(1, Math.ceil(latestPlayerCount / PROXY_DIVISOR));
+  return Math.max(1, Math.round(depth * HOLD_SEC / 60));
+}
+
 // ── Charm selection ───────────────────────────────────────────────────────────
 const CHARMS = [
   { key:'empathy',   label:'EMPATHY',   file:'01. EMPATHY.jpg' },
@@ -391,10 +472,14 @@ let selectedCharm = null;
 
 function showCharm(){
   selectedCharm = null;
-  document.getElementById('charm-name-label').textContent = submittedName || 'PLAYER';
+  // Name is re-entered explicitly on this screen — don't silently reuse submittedName
+  document.getElementById('inp-charm-name').value = '';
   document.getElementById('charm-err').textContent = '';
   document.getElementById('btn-post-charm').style.pointerEvents = 'auto';
   document.getElementById('btn-post-charm').style.opacity = '1';
+
+  const mins = estimateQueueMinutes();
+  document.getElementById('charm-eta').textContent = `${mins} MINUTE${mins === 1 ? '' : 'S'}`;
 
   const grid = document.getElementById('charm-grid');
   grid.innerHTML = '';
@@ -466,6 +551,12 @@ class PreloadScene extends Phaser.Scene {
     this.load.image('fx_win',   'assets/sprites/WIN.png');
     this.load.image('fx_lost',  'assets/sprites/LOST.png');
 
+    // Audio
+    this.load.audio('bgm_game', 'assets/audio/GAME BACKGROUND.mp3');
+    this.load.audio('sfx_fire', 'assets/audio/FIRE.mp3');
+    this.load.audio('sfx_hit',  'assets/audio/HIT.mp3');
+    this.load.audio('sfx_miss', 'assets/audio/MISS.mp3');
+
     // Static entity images
     ENTITY_DEFS.filter(e => !e.animated).forEach(e =>
       this.load.image(e.key, `assets/sprites/${e.file}`)
@@ -513,12 +604,15 @@ class GameScene extends Phaser.Scene {
 
   create(){
     gameSceneRef = this;
-    const wrap = document.getElementById('play-btn-wrap');
-    wrap.style.visibility = 'visible';
-    wrap.classList.add('pop-in');
+    // Trophy/leaderboard icon fades in first, then PLAY follows ~350ms later
     const lbBtn = document.getElementById('btn-leaderboard-title');
     lbBtn.style.visibility = 'visible';
     lbBtn.classList.add('pop-in');
+    const wrap = document.getElementById('play-btn-wrap');
+    setTimeout(() => {
+      wrap.style.visibility = 'visible';
+      wrap.classList.add('pop-in');
+    }, 350);
     this.state = 'idle';
     this._lastShot = 0;
 
@@ -536,13 +630,18 @@ class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.shotGrp, this.trashGrp,  (s,t) => this._hitTrash(s,t));
     this.physics.add.overlap(this.shotGrp, this.hazardGrp, (s,h) => this._hitHazard(s,h));
 
-    // Tap to fire
-    this.input.on('pointerdown', ptr => this._fire(ptr.x, ptr.y));
+    // Firing is only triggered by the FIRE button (#btn-fire-wrap) — no tap-anywhere.
 
     // Merlion origin — where shots emerge from.
     // Adjust mY if projectiles don't appear to come from the Merlion's position.
     this.mX = W * 0.47;
     this.mY = H * 0.67;
+
+    // Audio
+    this.bgm     = this.sound.add('bgm_game', { volume:0.35, loop:true });
+    this.sfxFire = this.sound.add('sfx_fire', { volume:0.6 });
+    this.sfxHit  = this.sound.add('sfx_hit',  { volume:0.7 });
+    this.sfxMiss = this.sound.add('sfx_miss', { volume:0.7 });
   }
 
   // ── Public: called from DOM buttons ───────────────────────────────────────
@@ -560,7 +659,12 @@ class GameScene extends Phaser.Scene {
     updateHUD();
 
     document.getElementById('hud').classList.add('on');
+    document.getElementById('btn-fire-wrap').classList.add('on');
     this._resetEntities();
+
+    this.bgm.stop();
+    this.bgm.setVolume(0.35);
+    this.bgm.play();
 
     // Countdown clock (always fresh after removeAllEvents)
     this._timerEvt = this.time.addEvent({
@@ -602,11 +706,12 @@ class GameScene extends Phaser.Scene {
 
   _spawnOneFrom(pool){
     const def    = Phaser.Utils.Array.GetRandom(pool);
-    const lanes  = def.zone === 'water' ? ZONE_Y.water
+    const lanes  = def.zoneY || (
+                   def.zone === 'water' ? ZONE_Y.water
                  : def.zone === 'road'  ? ZONE_Y.road
                  : def.zone === 'air'   ? ZONE_Y.air
-                 : [...ZONE_Y.water, ...ZONE_Y.road];
-    const laneY  = Phaser.Utils.Array.GetRandom(lanes);
+                 : [...ZONE_Y.water, ...ZONE_Y.road]);
+    const laneY  = Math.min(Phaser.Utils.Array.GetRandom(lanes), MAX_SPAWN_Y);
     const spawnX = this.scale.width + 80;
 
     // Always create a fresh sprite — avoids scale/animation bleed from recycling
@@ -626,7 +731,9 @@ class GameScene extends Phaser.Scene {
 
     if(def.animated) sp.play(`${def.key}_anim`, true);
 
-    const speed = Phaser.Math.Between(85, 150);
+    const speed = def.minSpd != null
+      ? Phaser.Math.Between(def.minSpd, def.maxSpd)
+      : Phaser.Math.Between(85, 150);
     if(def.rolling){
       const radius = (sp.displayWidth * 0.5);
       const msPerRot = (2 * Math.PI * radius) / speed * 1000;
@@ -650,6 +757,7 @@ class GameScene extends Phaser.Scene {
     const now = this.time.now;
     if(now - this._lastShot < FIRE_RATE_MS) return;
     this._lastShot = now;
+    this.sfxFire.play();
 
     const SHOT_SCALE = 0.1; // 1024×1024 image × 0.1 ≈ 102px on screen
 
@@ -675,6 +783,7 @@ class GameScene extends Phaser.Scene {
     trash.destroy();
     score += pts;
     updateHUD();
+    this.sfxHit.play();
     this._popFx(tx, ty, 'fx_win', 0.07, 600, 80);
     this._popText(tx + 55, ty, `+${pts}`, '#ffe600');
   }
@@ -684,6 +793,7 @@ class GameScene extends Phaser.Scene {
     shot.destroy();
     lives--;
     updateHUD();
+    this.sfxMiss.play();
     this.cameras.main.flash(260, 255, 30, 30, true);
     this.cameras.main.shake(200, 0.011);
     this._popFx(hazard.x - 40, hazard.y, 'fx_lost', 0.07, 1400);
@@ -697,7 +807,12 @@ class GameScene extends Phaser.Scene {
     if(this._timerEvt) { this._timerEvt.remove(); this._timerEvt = null; }
     this._resetEntities();
     document.getElementById('hud').classList.remove('on');
+    document.getElementById('btn-fire-wrap').classList.remove('on');
     document.getElementById('final-score').textContent = score;
+    this.tweens.add({
+      targets:this.bgm, volume:0, duration:600,
+      onComplete: () => this.bgm.stop(),
+    });
     showOv('ov-scoreboard');
   }
 
@@ -777,7 +892,7 @@ const game = new Phaser.Game({
   transparent: true,
   physics:{
     default: 'arcade',
-    arcade:  { gravity:{ y:0 }, debug:true }, // set debug:true to see hitboxes
+    arcade:  { gravity:{ y:0 }, debug:false }, // set debug:true to see hitboxes
   },
   scale:{
     mode:       Phaser.Scale.FIT,
@@ -812,7 +927,7 @@ document.getElementById('btn-play-again').addEventListener('click', () => {
   card.classList.add('pop-in');
 });
 
-document.getElementById('btn-exit').addEventListener('click', () => {
+document.getElementById('btn-submit-score').addEventListener('click', () => {
   document.getElementById('inp-name').value  = '';
   document.getElementById('inp-phone').value = '';
   document.getElementById('entry-err').textContent = '';
@@ -821,6 +936,10 @@ document.getElementById('btn-exit').addEventListener('click', () => {
   card.classList.remove('pop-in');
   void card.offsetWidth;
   card.classList.add('pop-in');
+});
+
+document.getElementById('btn-fire-wrap').addEventListener('click', () => {
+  gameSceneRef?._fire(gameSceneRef.mX, gameSceneRef.mY);
 });
 
 document.getElementById('btn-submit').addEventListener('click', async () => {
@@ -836,20 +955,23 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
     errEl.textContent = 'Mobile must be 8 digits starting with 8 or 9.'; return;
   }
 
-  const btn = document.getElementById('btn-submit');
-  btn.disabled = true; btn.textContent = 'Submitting…';
+  const wrap = document.getElementById('btn-submit');
+  const img  = document.getElementById('img-submit-btn');
+  wrap.style.pointerEvents = 'none';
+  img.src = 'assets/ui/SUBMITTING.png';
   try{
     const res = await apiPost('/score', { name, phone, score });
     if(res.ok){
       submittedName = name;
-      showLeaderboard(name, res.score ?? score, res.rank);
+      showLeaderboard(name, res.score ?? score, res.rank, true);
     } else {
       errEl.textContent = escHtml(res.error || 'Something went wrong.');
     }
   } catch(e){
     errEl.textContent = 'Network error — check your connection.';
   } finally {
-    btn.disabled = false; btn.textContent = 'SUBMIT SCORE';
+    wrap.style.pointerEvents = 'auto';
+    img.src = 'assets/ui/pixelcut_4 10.png';
   }
 });
 
@@ -861,23 +983,26 @@ document.getElementById('btn-leaderboard-title').addEventListener('click', () =>
   showLeaderboard();
 });
 
-document.getElementById('btn-close-leaderboard').addEventListener('click', () => {
+document.getElementById('btn-charm-home').addEventListener('click', () => {
   showOv('ov-title');
 });
 
-document.getElementById('btn-post-love').addEventListener('click', () => {
-  showCharm();
-});
-
 document.getElementById('btn-post-charm').addEventListener('click', async () => {
-  if(!selectedCharm){
-    document.getElementById('charm-err').textContent = 'Please pick a charm first.';
+  const name = document.getElementById('inp-charm-name').value.trim();
+  const errEl = document.getElementById('charm-err');
+  if(!name || name.length > 20){
+    errEl.textContent = 'Please enter your name (1–20 characters).';
     return;
   }
+  if(!selectedCharm){
+    errEl.textContent = 'Please pick a charm first.';
+    return;
+  }
+  errEl.textContent = '';
   const btn = document.getElementById('btn-post-charm');
   btn.style.pointerEvents = 'none'; btn.style.opacity = '0.5';
   try{
-    await apiPost('/charm', { name: submittedName, charm: selectedCharm });
+    await apiPost('/charm', { name, charm: selectedCharm });
   } catch(e){ /* fire-and-forget — still show finish screen */ }
   showOv('ov-finish');
 });
