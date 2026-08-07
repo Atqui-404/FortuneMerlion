@@ -47,6 +47,17 @@ db.exec(`
     ) WHERE rn = 1
   );
   CREATE UNIQUE INDEX IF NOT EXISTS idx_scores_phone ON scores(phone);
+
+  -- Unconditional log of every valid submission, for event analytics.
+  -- Unlike 'scores' (one row per phone, best score only), this keeps every
+  -- play so total-plays / plays-per-day / etc. can be reported after the event.
+  CREATE TABLE IF NOT EXISTS plays (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL,
+    phone      TEXT    NOT NULL,
+    score      INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
  
 // ─── Validation helpers ────────────────────────────────────────────────────
@@ -78,6 +89,11 @@ app.post('/score', limiter10, (req, res) => {
     return res.status(400).json({ error: 'Invalid score' });
  
   const cleanName = stripHtml(name.trim());
+
+  // Log every valid attempt unconditionally (analytics — never deduped, never shown publicly)
+  db.prepare('INSERT INTO plays (name, phone, score) VALUES (?, ?, ?)').run(cleanName, phone, score);
+
+  // Leaderboard entry: one row per phone, keeps only the best score (unchanged behavior)
   db.prepare(`
     INSERT INTO scores (name, phone, score) VALUES (?, ?, ?)
     ON CONFLICT(phone) DO UPDATE SET
@@ -127,8 +143,11 @@ app.get('/admin/export', (req, res) => {
   const auth = req.headers.authorization;
   if (!ADMIN_TOKEN || !auth || auth !== `Bearer ${ADMIN_TOKEN}`)
     return res.status(401).json({ error: 'Unauthorized' });
-  const rows = db.prepare('SELECT * FROM scores ORDER BY score DESC').all();
-  res.json(rows);
+  const scores = db.prepare('SELECT * FROM scores ORDER BY score DESC').all();
+  const plays  = db.prepare('SELECT * FROM plays ORDER BY created_at DESC').all();
+  const totalPlays    = plays.length;
+  const uniquePlayers = scores.length;
+  res.json({ totalPlays, uniquePlayers, scores, plays });
 });
  
 // ─── Socket.io ─────────────────────────────────────────────────────────────
