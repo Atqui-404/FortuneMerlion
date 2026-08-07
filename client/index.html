@@ -255,19 +255,24 @@
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
     <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);">
-      <img src="assets/ui/PP Screen.png" style="width:100%;display:block;" alt="Post &amp; Pose">
+      <!-- image + overlay share their own wrapper so the overlay's bottom:0
+           resolves against just the image's height, not image+buttons combined
+           (charm-card's total height includes the button row below) -->
+      <div style="position:relative;">
+        <img src="assets/ui/PP Screen.png" style="width:100%;display:block;" alt="Post &amp; Pose">
 
-      <!-- content overlay, positioned relative to the now-correctly-sized image -->
-      <div style="position:absolute;top:44%;left:12%;right:12%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
-        <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
-          style="width:70%;text-align:center;padding:6px 12px;border:2px solid #b8832a;border-radius:8px;font-size:15px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
-        <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
-        <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:10px;flex-shrink:0;"></div>
-        <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
-        <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
+        <!-- content overlay, positioned relative to the now-correctly-sized image -->
+        <div style="position:absolute;top:44%;left:12%;right:12%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
+          <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
+            style="width:70%;text-align:center;padding:6px 12px;border:2px solid #b8832a;border-radius:8px;font-size:15px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
+          <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
+          <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:10px;flex-shrink:0;"></div>
+          <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
+          <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
+        </div>
       </div>
 
-      <!-- normal document flow, AFTER the image — always below it, never overlapping -->
+      <!-- normal document flow, AFTER the image wrapper — always below it, never overlapping -->
       <div class="img-btn-row" style="margin-top:14px;margin-bottom:10px;">
         <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
         <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
@@ -323,10 +328,10 @@ window.addEventListener('orientationchange', fitGameWrap);
 // Tip: set  debug:true  in Phaser arcade config below, then fine-tune these
 const ZONE_Y = {
   water: [320, 332,343],       // river / waterway band
-  road:  [400, 405, 408],       // red running + cycling track
+  road:  [405, 410, 415],       // red running + cycling track
   air:   [245, 285, 313, 340, 367],  // just above waterway — birds visible here, not hidden in sky
 };
-const MAX_SPAWN_Y = 430; // nothing may spawn below this — keeps entities off the merlion's head
+const MAX_SPAWN_Y = 415; // nothing may spawn below this — keeps entities off the merlion's head
 
 // ── Spritesheet frame sizes ───────────────────────────────────────────────────
 // If an animation looks wrong: frameW = image_total_width / num_frames
@@ -357,7 +362,7 @@ const SHEETS = {
 // down from there in two bands (water, then road) by minSpd/maxSpd and pts.
 const ENTITY_DEFS = [
   // ── TRASH — shoot these ── (ordered high/fast/valuable → low/slow/cheap)
-  { key:'plastic_bag',file:'Plastic Bag.PNG',        zoneY:[250,265,280], isHazard:false, pts:50, minSpd:180, maxSpd:200, scale:0.256, hbScale:0.45, floating:true },
+  { key:'plastic_bag',file:'Plastic Bag.PNG',        zoneY:[150, 175, 190], isHazard:false, pts:50, minSpd:180, maxSpd:200, scale:0.256, hbScale:0.45, floating:true },
   { key:'blind_box',  file:'Blind Box.PNG',          zone:'water', isHazard:false, pts:35, minSpd:150, maxSpd:170, scale:0.256, hbScale:0.32 },
   { key:'bottles',    file:'Bottles.PNG',            zone:'water', isHazard:false, pts:28, minSpd:130, maxSpd:150, scale:0.237, hbScale:0.32 },
   { key:'bottle_sub', file:'Bottle Submerged.PNG',   zone:'water', isHazard:false, pts:20, minSpd:110, maxSpd:130, scale:0.237, hbScale:0.32 },
@@ -366,13 +371,18 @@ const ENTITY_DEFS = [
   { key:'bottle',     file:'Bottle.PNG',             zone:'road',  isHazard:false, pts:10, minSpd:70,  maxSpd:90,  scale:0.205, hbScale:0.32, rolling:true },
   { key:'soda_can',   file:'Soda Can.PNG',           zone:'road',  isHazard:false, pts:8,  minSpd:60,  maxSpd:80,  scale:0.128, rolling:true },
   // ── HAZARDS — do NOT shoot ──
-  { key:'elderly01',  file:'Elderly 01.PNG',         zone:'road', isHazard:true, scale:0.333, hbScale:0.32 },
-  { key:'elderly02',  file:'Elderly 02.PNG',         zone:'road', isHazard:true, scale:0.333, hbScale:0.32 },
-  { key:'man',        file:'Man sprite.png',         zone:'road', isHazard:true, scale:0.36, animated:true, hbScale:0.48 },
-  { key:'woman',      file:'Woman sprite.png',       zone:'road', isHazard:true, scale:0.35, animated:true, hbScale:0.48 },
+  // originY anchors each sprite by its actual feet position (measured from
+  // the source image's own content bounds) instead of Phaser's default dead-
+  // center — otherwise entities with different amounts of internal padding
+  // (elderly figures vs. tight-cropped joggers/pigeon) visually stand at
+  // different heights even when spawned at the exact same lane Y.
+  { key:'elderly01',  file:'Elderly 01.PNG',         zone:'road', isHazard:true, scale:0.37, hbScale:0.32, originY:0.71 },
+  { key:'elderly02',  file:'Elderly 02.PNG',         zone:'road', isHazard:true, scale:0.37, hbScale:0.32, originY:0.70 },
+  { key:'man',        file:'Man sprite.png',         zone:'road', isHazard:true, scale:0.40, animated:true, hbScale:0.48, originY:0.80 },
+  { key:'woman',      file:'Woman sprite.png',       zone:'road', isHazard:true, scale:0.39, animated:true, hbScale:0.48, originY:0.80 },
   { key:'otter',      file:'Otter sprite.png',       zone:'road', isHazard:true, scale:0.30, animated:true },
-  { key:'pigeon',     file:'Pigeon sprite.png',      zone:'road', isHazard:true, scale:0.28, animated:true, hbScale:0.45 },
-  { key:'crow',       file:'Crow spritesheet.png',   zoneY:[225,240,255], isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
+  { key:'pigeon',     file:'Pigeon sprite.png',      zone:'road', isHazard:true, scale:0.22, animated:true, hbScale:0.45, originY:0.80 },
+  { key:'crow',       file:'Crow spritesheet.png',   zoneY:[215,225,240], isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
   { key:'myna',       file:'Myna sprite.png',        zone:'air',  isHazard:true, scale:0.30, animated:true, hbScale:0.45 },
 ];
 
@@ -752,6 +762,7 @@ class GameScene extends Phaser.Scene {
     // Always create a fresh sprite — avoids scale/animation bleed from recycling
     const sp = this.physics.add.sprite(spawnX, laneY, def.key);
     sp.setScale(def.scale || 0.4);
+    if(def.originY != null) sp.setOrigin(0.5, def.originY);
 
     // 62 % hitbox using unscaled frame size (sp.width on ArcadePhysics sprites
     // returns body.width which already includes scale — use frame.realWidth instead)
