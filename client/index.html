@@ -237,19 +237,28 @@
     <div id="leaderboard-card" style="position:relative;width:min(96%,560px);">
       <img src="assets/ui/LEADERBOARD.png" style="width:100%;display:block;" alt="Leaderboard">
       <!-- scores injected here, centred in the blank parchment area of the image -->
-      <div id="leader-list" style="position:absolute;top:32%;bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;overflow:hidden;box-sizing:border-box;"></div>
+      <div id="leader-list" style="position:absolute;top:calc(32% + 10px);bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;overflow:hidden;box-sizing:border-box;"></div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
     <div id="leaderboard-btn-row" class="img-btn-row" style="margin-top:20px;"></div>
   </div>
 
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
+  <!-- Card is a column flexbox now, not a fixed-height box the content/buttons
+       were separately absolute-positioned inside of — the art is a background
+       layer (z-index:-1) behind real flow content, and the button row is a
+       normal flex child *after* that content, so it's physically impossible
+       for it to overlap the charm grid: it always renders below whatever
+       height the content actually needs, on any screen. -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);">
-      <img src="assets/ui/PP Screen.png" style="width:100%;display:block;" alt="Post &amp; Pose">
-      <!-- Content: name, charm grid, disclaimer -->
-      <div style="position:absolute;top:44%;bottom:4%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
+    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);display:flex;flex-direction:column;">
+      <img src="assets/ui/PP Screen.png" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:-1;" alt="Post &amp; Pose">
+      <!-- padding-top is % of WIDTH (a CSS quirk for top/bottom padding) —
+           55% here reproduces the old "top:44% of the image's own height"
+           offset (2804/2244 image ratio × 44% ≈ 55%), so content still
+           starts right below the merlion/title artwork. -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:55%;padding-left:12%;padding-right:12%;overflow:hidden;">
         <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
           style="width:70%;text-align:center;padding:6px 12px;border:2px solid #b8832a;border-radius:8px;font-size:15px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
         <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
@@ -257,13 +266,10 @@
         <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
         <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
       </div>
-    </div>
-    <!-- POST + BACK TO HOME live below the card now, not overlapping it —
-         absolute-positioning them over the bottom of the card (old design)
-         broke whenever the card's own size shifted even slightly. -->
-    <div class="img-btn-row" style="margin-top:14px;">
-      <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
-      <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
+      <div class="img-btn-row" style="flex-shrink:0;margin-top:14px;margin-bottom:10px;">
+        <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
+        <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
+      </div>
     </div>
   </div>
 
