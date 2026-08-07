@@ -203,7 +203,7 @@
       </div>
     </div>
     <!-- Buttons live below the panel, well clear of the previous screen's fire button -->
-    <div class="img-btn-row" style="margin-top:-14px;gap:8px;">
+    <div class="img-btn-row" style="--btn-w:150px;margin-top:-14px;gap:8px;">
       <div id="btn-play-again" class="img-btn"><img src="assets/ui/PLAY AGAIN.png" alt="Play Again"></div>
       <div id="btn-submit-score" class="img-btn"><img src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
     </div>
@@ -240,7 +240,7 @@
       <div id="leader-list" style="position:absolute;top:calc(32% + 10px);bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:4px;overflow:hidden;box-sizing:border-box;"></div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
-    <div id="leaderboard-btn-row" class="img-btn-row" style="margin-top:20px;"></div>
+    <div id="leaderboard-btn-row" class="img-btn-row" style="--btn-w:150px;margin-top:20px;"></div>
   </div>
 
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
@@ -262,18 +262,18 @@
         <img src="assets/ui/PP Screen.png" style="width:100%;display:block;" alt="Post &amp; Pose">
 
         <!-- content overlay, positioned relative to the now-correctly-sized image -->
-        <div style="position:absolute;top:44%;left:12%;right:12%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
+        <div style="position:absolute;top:44%;left:12%;right:12%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:4px;overflow:hidden;">
           <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
             style="width:70%;text-align:center;padding:6px 12px;border:2px solid #b8832a;border-radius:8px;font-size:15px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
           <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
-          <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:10px;flex-shrink:0;"></div>
+          <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:6px;flex-shrink:0;"></div>
           <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
           <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
         </div>
       </div>
 
       <!-- normal document flow, AFTER the image wrapper — always below it, never overlapping -->
-      <div class="img-btn-row" style="margin-top:14px;margin-bottom:10px;">
+      <div class="img-btn-row" style="--btn-w:150px;margin-top:14px;margin-bottom:10px;">
         <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
         <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
       </div>
@@ -535,7 +535,7 @@ function showCharm(){
     const img = document.createElement('img');
     img.src = `assets/sprites/${c.file}`;
     img.alt = c.label;
-    img.style.cssText = 'height:95px;width:auto;display:block;border-radius:8px;pointer-events:none;';
+    img.style.cssText = 'height:min(95px, 11vh);width:auto;display:block;border-radius:8px;pointer-events:none;';
     wrap.appendChild(img);
     wrap.addEventListener('click', () => {
       grid.querySelectorAll('[data-key]').forEach(el => {
