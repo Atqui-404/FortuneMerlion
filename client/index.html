@@ -18,11 +18,16 @@
     /* Phone-shaped frame: always keeps the 480:845 portrait ratio and scales
        to fit whatever viewport it's in (small phone, big phone, tablet,
        laptop) — capped so it doesn't stretch into a full-bleed rectangle on
-       wide/tall screens like an iPad or desktop browser. */
+       wide/tall screens like an iPad or desktop browser.
+       Width AND height are both computed directly via min() (mirrored
+       formulas) instead of relying on the CSS `aspect-ratio` property —
+       older mobile browsers don't support aspect-ratio, and without it the
+       box's height falls back to being driven by its content (the Phaser
+       canvas), which is what was causing the frame to balloon in size. */
     #game-wrap{
       position:relative;
-      aspect-ratio:480/845;
-      width:min(94vw, 94vh * 480 / 845, 600px);
+      width:  min(94vw, 94vh * 480 / 845, 600px);
+      height: min(94vh, 94vw * 845 / 480, 1056px);
       overflow:hidden;
     }
 
@@ -241,8 +246,8 @@
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);height:92%;">
-      <img src="assets/ui/PP Screen.png" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;" alt="Post &amp; Pose">
+    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px,69vh);">
+      <img src="assets/ui/PP Screen.png" style="width:100%;display:block;" alt="Post &amp; Pose">
       <!-- Content: name, charm grid, disclaimer — buttons are outside this flow -->
       <div style="position:absolute;top:44%;bottom:11%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
         <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
@@ -263,7 +268,7 @@
   <!-- ── FINISH (published confirmation) ───────────────────────────── -->
   <div class="ov" id="ov-finish">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div style="position:relative;z-index:1;width:min(100%,520px);">
+    <div style="position:relative;z-index:1;width:min(100%,520px,69vh);">
       <img src="assets/ui/FINISH.png" style="width:100%;display:block;" alt="Published">
       <!-- invisible zone over the CLOSED button drawn in the PNG -->
       <div id="btn-close-finish" style="position:absolute;bottom:10%;left:27%;right:27%;height:8%;cursor:pointer;border-radius:25px;"></div>
@@ -313,26 +318,29 @@ const SHEETS = {
 // isHazard false → SHOOT for points
 // isHazard true  → DON'T SHOOT (lose a life)
 // flipX true     → sprite naturally faces right; flip so it faces left when moving left
-// Scale guide for 3200×3200 static sprites (content fills ~50% = ~1600px):
-//   60px target  → scale 0.037   |   80px → 0.050   |   100px → 0.062
-// Animated sprites have tight frames (no padding) so scale is straightforward.
+// Scale guide for 500×500 static sprites (content fills ~50% = ~250px):
+//   60px target  → scale 0.24   |   80px → 0.32   |   100px → 0.40
+// (Source PNGs were downsized from 3200×3200 to 500×500 to cut load size —
+// scale values below are ×6.4 vs the old 3200px-source numbers to land on
+// the same on-screen size. Animated spritesheets were left at full res, so
+// their scale values are untouched.)
 //
 // Score system: higher lane + faster speed → higher points. Plastic bag spawns
 // highest, moves fastest, and is worth the most (50); everything else is graded
 // down from there in two bands (water, then road) by minSpd/maxSpd and pts.
 const ENTITY_DEFS = [
   // ── TRASH — shoot these ── (ordered high/fast/valuable → low/slow/cheap)
-  { key:'plastic_bag',file:'Plastic Bag.PNG',        zoneY:[250,265,280], isHazard:false, pts:50, minSpd:180, maxSpd:200, scale:0.040, hbScale:0.45, floating:true },
-  { key:'blind_box',  file:'Blind Box.PNG',          zone:'water', isHazard:false, pts:35, minSpd:150, maxSpd:170, scale:0.040, hbScale:0.32 },
-  { key:'bottles',    file:'Bottles.PNG',            zone:'water', isHazard:false, pts:28, minSpd:130, maxSpd:150, scale:0.037, hbScale:0.32 },
-  { key:'bottle_sub', file:'Bottle Submerged.PNG',   zone:'water', isHazard:false, pts:20, minSpd:110, maxSpd:130, scale:0.037, hbScale:0.32 },
-  { key:'pellet',     file:'Pellet.PNG',             zone:'water', isHazard:false, pts:15, minSpd:95,  maxSpd:115, scale:0.025 },
-  { key:'lunch',      file:'Lunch.PNG',              zone:'road',  isHazard:false, pts:12, minSpd:80,  maxSpd:100, scale:0.037, hbScale:0.32, rolling:true },
-  { key:'bottle',     file:'Bottle.PNG',             zone:'road',  isHazard:false, pts:10, minSpd:70,  maxSpd:90,  scale:0.032, hbScale:0.32, rolling:true },
-  { key:'soda_can',   file:'Soda Can.PNG',           zone:'road',  isHazard:false, pts:8,  minSpd:60,  maxSpd:80,  scale:0.020, rolling:true },
+  { key:'plastic_bag',file:'Plastic Bag.PNG',        zoneY:[250,265,280], isHazard:false, pts:50, minSpd:180, maxSpd:200, scale:0.256, hbScale:0.45, floating:true },
+  { key:'blind_box',  file:'Blind Box.PNG',          zone:'water', isHazard:false, pts:35, minSpd:150, maxSpd:170, scale:0.256, hbScale:0.32 },
+  { key:'bottles',    file:'Bottles.PNG',            zone:'water', isHazard:false, pts:28, minSpd:130, maxSpd:150, scale:0.237, hbScale:0.32 },
+  { key:'bottle_sub', file:'Bottle Submerged.PNG',   zone:'water', isHazard:false, pts:20, minSpd:110, maxSpd:130, scale:0.237, hbScale:0.32 },
+  { key:'pellet',     file:'Pellet.PNG',             zone:'water', isHazard:false, pts:15, minSpd:95,  maxSpd:115, scale:0.160 },
+  { key:'lunch',      file:'Lunch.PNG',              zone:'road',  isHazard:false, pts:12, minSpd:80,  maxSpd:100, scale:0.237, hbScale:0.32, rolling:true },
+  { key:'bottle',     file:'Bottle.PNG',             zone:'road',  isHazard:false, pts:10, minSpd:70,  maxSpd:90,  scale:0.205, hbScale:0.32, rolling:true },
+  { key:'soda_can',   file:'Soda Can.PNG',           zone:'road',  isHazard:false, pts:8,  minSpd:60,  maxSpd:80,  scale:0.128, rolling:true },
   // ── HAZARDS — do NOT shoot ──
-  { key:'elderly01',  file:'Elderly 01.PNG',         zone:'road', isHazard:true, scale:0.052, hbScale:0.32 },
-  { key:'elderly02',  file:'Elderly 02.PNG',         zone:'road', isHazard:true, scale:0.052, hbScale:0.32 },
+  { key:'elderly01',  file:'Elderly 01.PNG',         zone:'road', isHazard:true, scale:0.333, hbScale:0.32 },
+  { key:'elderly02',  file:'Elderly 02.PNG',         zone:'road', isHazard:true, scale:0.333, hbScale:0.32 },
   { key:'man',        file:'Man sprite.png',         zone:'road', isHazard:true, scale:0.36, animated:true, hbScale:0.48 },
   { key:'woman',      file:'Woman sprite.png',       zone:'road', isHazard:true, scale:0.35, animated:true, hbScale:0.48 },
   { key:'otter',      file:'Otter sprite.png',       zone:'road', isHazard:true, scale:0.30, animated:true },
@@ -759,7 +767,7 @@ class GameScene extends Phaser.Scene {
     this._lastShot = now;
     this.sfxFire.play();
 
-    const SHOT_SCALE = 0.1; // 1024×1024 image × 0.1 ≈ 102px on screen
+    const SHOT_SCALE = 0.205; // fire_shot source is 500×500 (downsized from 1024) × 0.205 ≈ 102px on screen
 
     const shot = this.physics.add.sprite(this.mX, this.mY, 'fire_shot');
     shot.setScale(SHOT_SCALE);
@@ -784,7 +792,7 @@ class GameScene extends Phaser.Scene {
     score += pts;
     updateHUD();
     this.sfxHit.play();
-    this._popFx(tx, ty, 'fx_win', 0.07, 600, 80);
+    this._popFx(tx, ty, 'fx_win', 0.143, 600, 80);
     this._popText(tx + 55, ty, `+${pts}`, '#ffe600');
   }
 
@@ -796,7 +804,7 @@ class GameScene extends Phaser.Scene {
     this.sfxMiss.play();
     this.cameras.main.flash(260, 255, 30, 30, true);
     this.cameras.main.shake(200, 0.011);
-    this._popFx(hazard.x - 40, hazard.y, 'fx_lost', 0.07, 1400);
+    this._popFx(hazard.x - 40, hazard.y, 'fx_lost', 0.143, 1400);
     if(lives <= 0) this.time.delayedCall(550, () => this._endGame());
   }
 
