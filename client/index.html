@@ -246,10 +246,10 @@
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px,69vh);">
+    <div id="charm-card" style="position:relative;z-index:1;width:min(100%,520px);">
       <img src="assets/ui/PP Screen.png" style="width:100%;display:block;" alt="Post &amp; Pose">
-      <!-- Content: name, charm grid, disclaimer — buttons are outside this flow -->
-      <div style="position:absolute;top:44%;bottom:11%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
+      <!-- Content: name, charm grid, disclaimer -->
+      <div style="position:absolute;top:44%;bottom:4%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;">
         <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
           style="width:70%;text-align:center;padding:6px 12px;border:2px solid #b8832a;border-radius:8px;font-size:15px;font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
         <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:12px;font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
@@ -257,11 +257,13 @@
         <div id="charm-err" style="color:#c0392b;font-size:11px;min-height:14px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
         <div style="font-size:10px;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
       </div>
-      <!-- POST + BACK TO HOME — hang half off the bottom of the PP frame -->
-      <div class="img-btn-row" style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);z-index:10;white-space:nowrap;">
-        <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
-        <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
-      </div>
+    </div>
+    <!-- POST + BACK TO HOME live below the card now, not overlapping it —
+         absolute-positioning them over the bottom of the card (old design)
+         broke whenever the card's own size shifted even slightly. -->
+    <div class="img-btn-row" style="margin-top:14px;">
+      <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
+      <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
     </div>
   </div>
 
@@ -287,10 +289,27 @@ const GAME_DURATION = 60;     // seconds
 const MAX_LIVES     = 3;
 const FIRE_RATE_MS  = 220;    // minimum ms between shots
 
-// #game-wrap sizing is handled entirely by CSS now (aspect-ratio + min(),
-// see the stylesheet) — it always keeps the 480:845 phone shape and fits
-// the real viewport without needing JS. Phaser's Scale.FIT + autoCenter
-// tracks that CSS-sized parent on its own.
+// ── Responsive fit (JS, not CSS) ────────────────────────────────────────────
+// The stylesheet also sets #game-wrap's width/height via CSS min() as a
+// baseline, but some mobile browsers/webviews don't support min() with
+// arithmetic inside it — when that happens the whole declaration is invalid
+// and gets dropped, leaving the box with NO defined size. Phaser then reads
+// an unconstrained parent and sizes its canvas off the full window instead
+// of the intended 480:845 shape, and the box balloons to match. Setting
+// explicit inline pixel width/height here always wins over the CSS (same
+// specificity, but inline + later in the cascade) and only needs plain JS
+// math, so it works everywhere regardless of what CSS features are supported.
+function fitGameWrap(){
+  const wrap = document.getElementById('game-wrap');
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const w = Math.min(vw * 0.94, vh * 0.94 * 480 / 845, 600);
+  const h = w * 845 / 480;
+  wrap.style.width  = w + 'px';
+  wrap.style.height = h + 'px';
+}
+fitGameWrap();
+window.addEventListener('resize', fitGameWrap);
+window.addEventListener('orientationchange', fitGameWrap);
 
 // ── Zone Y-positions (adjust to match where things sit in GAME.jpg) ───────────
 // Tip: set  debug:true  in Phaser arcade config below, then fine-tune these
