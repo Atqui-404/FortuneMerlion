@@ -2,250 +2,208 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>Fortune Merlion: Broadcast Display</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fortune Merlion — Live Wall</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  html,body{
-    width:100%;height:100%;
-    background:#051a0d;
-    overflow:hidden;
-    font-family:'Arial Rounded MT Bold',Arial,sans-serif;
-  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; background:#051a0d; overflow:hidden; transition:background-color .5s ease;
+    font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
+  #stage { position:fixed; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; }
 
-  /* ── Ambient particles ───────────────────────────────────────────── */
-  #particles{ position:fixed; inset:0; overflow:hidden; z-index:1; pointer-events:none; }
-  .particle{
-    position:absolute;
-    bottom:-10px;
-    border-radius:50%;
-    opacity:.55;
-    animation-name:float-up;
-    animation-timing-function:linear;
-    animation-fill-mode:forwards;
-  }
-  @keyframes float-up{
-    from{ transform:translateY(0); opacity:.55; }
-    to{ transform:translateY(-110vh); opacity:0; }
-  }
+  /* ---- idle state ---- */
+  #idle { display:flex; flex-direction:column; align-items:center; gap:28px; }
+  #idle-title { font-size:min(9vw,90px); font-weight:900; letter-spacing:4px;
+    background:linear-gradient(90deg,#ff6fa5,#ffd85e,#7dffb0,#6fd8ff,#c68fff,#ff6fa5);
+    background-size:300% 100%; -webkit-background-clip:text; background-clip:text;
+    color:transparent; animation:hue 6s linear infinite; text-align:center; }
+  @keyframes hue { to { background-position:300% 0; } }
+  #idle-sub { color:#eafff2; font-size:min(3vw,28px); opacity:.85; text-align:center; }
+  #idle-qr-hint { color:#7dffb0; font-size:min(2.2vw,22px); font-weight:700; }
 
-  /* ── Idle state ──────────────────────────────────────────────────── */
-  #idle{
-    position:fixed; inset:0; z-index:2;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; gap:18px;
-  }
-  #idle.hidden{ display:none; }
-  #idle-title{
-    font-size:min(9vw,90px);
-    font-weight:900;
-    letter-spacing:6px;
-    background:linear-gradient(90deg,#ffd166,#e91e8c,#06d6a0,#ffd166);
-    background-size:300% 100%;
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:hue-shift 6s linear infinite;
-  }
-  @keyframes hue-shift{
-    0%{ background-position:0% 50%; }
-    100%{ background-position:300% 50%; }
-  }
-  #idle-subtitle{ font-size:min(3vw,28px); color:#e8fff0; letter-spacing:2px; }
-  #idle-prompt{ font-size:min(2.2vw,20px); color:#8fd9b0; letter-spacing:1px; }
+  /* floating particles */
+  .particle { position:fixed; bottom:-40px; border-radius:50%; opacity:.55;
+    animation:float linear infinite; pointer-events:none; }
+  @keyframes float { to { transform:translateY(-110vh) translateX(var(--dx)); opacity:0; } }
 
-  /* ── Charm reveal ────────────────────────────────────────────────── */
-  #reveal{
-    position:fixed; inset:0; z-index:2;
-    display:none; flex-direction:column; align-items:center; justify-content:center;
-    gap:24px;
-  }
-  #reveal.on{ display:flex; }
-  #reveal-img{
-    max-width:min(60vw,600px);
-    max-height:65vh;
-    border-radius:18px;
-    box-shadow:0 0 60px rgba(233,30,140,.55);
-  }
-  #reveal-name{ font-size:min(4vw,40px); color:#ffe08a; font-weight:900; letter-spacing:2px; }
+  /* ---- charm reveal state: full-screen charm, name pinned to top ---- */
+  #reveal { display:none; }
+  #reveal.show { display:block; }
+  #reveal-img { position:fixed; inset:0; width:100%; height:100%;
+    object-fit:cover; z-index:0; }
+  #reveal-name { position:fixed; top:70px; left:0; right:0; z-index:1;
+    text-align:center; color:#ffd85e; font-size:min(6vw,52px); font-weight:800;
+    text-shadow:0 2px 12px rgba(0,0,0,.6); }
 
-  /* ── Ticker ──────────────────────────────────────────────────────── */
-  #ticker-wrap{
-    position:fixed; top:0; left:0; right:0; height:52px; z-index:3;
-    background:rgba(0,0,0,.55);
-    overflow:hidden;
-    display:flex; align-items:center;
-    border-bottom:1px solid rgba(255,255,255,.15);
-  }
-  #ticker{
-    display:inline-flex; white-space:nowrap;
-    animation:ticker-scroll 22s linear infinite;
-    padding-left:100%;
-  }
-  #ticker span{
-    color:#e8fff0; font-size:18px; letter-spacing:1px; padding:0 40px;
-  }
-  @keyframes ticker-scroll{
-    from{ transform:translateX(0); }
-    to{ transform:translateX(-100%); }
-  }
+  /* ---- bottom ribbon ---- */
+  #ribbon { position:fixed; left:0; right:0; bottom:0; height:64px; z-index:10;
+    background:rgba(0,0,0,.35); transition:background .5s ease; display:flex; align-items:center;
+    justify-content:center; gap:14px; color:#eafff2; font-size:20px; font-weight:600; }
+  #dot { width:12px; height:12px; border-radius:50%; background:#4caf50;
+    box-shadow:0 0 8px #4caf50; animation:pulse 1.6s ease-in-out infinite; }
+  #dot.off { background:#d33; box-shadow:0 0 8px #d33; animation:none; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
 
-  /* ── Ribbon ──────────────────────────────────────────────────────── */
-  #ribbon{
-    position:fixed; bottom:0; left:0; right:0; height:44px; z-index:3;
-    background:rgba(0,0,0,.55);
-    display:flex; align-items:center; gap:10px;
-    padding:0 18px;
-    border-top:1px solid rgba(255,255,255,.15);
-    color:#e8fff0; font-size:14px; letter-spacing:1px;
-  }
-  #status-dot{
-    width:12px; height:12px; border-radius:50%;
-    background:#e63946;
-  }
-  #status-dot.connected{
-    background:#06d6a0;
-    animation:pulse 1.6s ease-in-out infinite;
-  }
-  @keyframes pulse{
-    0%,100%{ box-shadow:0 0 0 0 rgba(6,214,160,.6); }
-    50%{ box-shadow:0 0 0 8px rgba(6,214,160,0); }
-  }
-  #status-text{ opacity:.8; }
-  #player-count{ margin-left:auto; font-weight:900; }
+  /* ---- top ticker ---- */
+  #ticker-wrap { position:fixed; top:0; left:0; right:0; height:48px; z-index:10;
+    background:rgba(0,0,0,.3); transition:background .5s ease; overflow:hidden; display:flex; align-items:center; }
+  #ticker { display:flex; gap:48px; white-space:nowrap; padding-left:100%;
+    animation:scroll 24s linear infinite; color:#cdeedd; font-size:16px; font-weight:600; }
+  @keyframes scroll { to { transform:translateX(-100%); } }
 </style>
 </head>
 <body>
 
-<div id="particles"></div>
+<div id="ticker-wrap"><div id="ticker"></div></div>
 
-<div id="ticker-wrap"><div id="ticker" id="ticker"></div></div>
+<div id="stage">
+  <div id="idle">
+    <div id="idle-title">FORTUNE MERLION</div>
+    <div id="idle-sub">Shoot hearts, save the harbour, make a wish 💚</div>
+    <div id="idle-qr-hint">✨ Scan the QR code to play and post your charm ✨</div>
+  </div>
 
-<div id="idle">
-  <div id="idle-title">FORTUNE MERLION</div>
-  <div id="idle-subtitle">Blooming Hearts — Live Charm Wall</div>
-  <div id="idle-prompt">Scan the QR code to play and post your charm</div>
-</div>
-
-<div id="reveal">
-  <img id="reveal-img" src="" alt="">
-  <div id="reveal-name"></div>
+  <div id="reveal">
+    <img id="reveal-img" src="" alt="Charm">
+    <div id="reveal-name"></div>
+  </div>
 </div>
 
 <div id="ribbon">
-  <div id="status-dot"></div>
-  <span id="status-text">Connecting…</span>
-  <span id="player-count">0 players</span>
+  <div id="dot"></div>
+  <span id="ribbon-text">Connecting…</span>
 </div>
 
 <script>
-const SERVER_URL = 'https://fortunemerlion-production.up.railway.app';
-const HOLD_MS = 15000;
+'use strict';
 
-const CHARMS = {
-  empathy:   { label:'EMPATHY',   file:'01. EMPATHY.jpg' },
-  nobility:  { label:'NOBILITY',  file:'02. NOBILITY.jpg' },
-  longevity: { label:'LONGEVITY', file:'03. LONGEVITY.jpg' },
-  vitality:  { label:'VITALITY',  file:'04. VITALITY.jpg' },
-  stability: { label:'STABILITY', file:'05. STABILITY.jpg' },
-  serenity:  { label:'SERENITY',  file:'06. SERENITY.jpg' },
+/* =========================================================
+   CONFIG — must match the SERVER_URL used in the game client
+   ========================================================= */
+const SERVER_URL = 'https://fortunemerlion-production.up.railway.app'; // <-- confirm this matches your live backend
+
+const CHARM_NAMES = {
+  empathy: 'Love & Empathy', nobility: 'Nobility', longevity: 'Longevity',
+  vitality: 'Vitality', stability: 'Stability', serenity: 'Serenity'
 };
+// Exact brand color per charm, matching each charm's own background art
+const CHARM_COLORS = {
+  empathy:   '#FF829A', // pink
+  nobility:  '#33A7B4', // teal
+  longevity: '#C6BA26', // olive
+  vitality:  '#A360C1', // purple
+  stability: '#FF9400', // orange
+  serenity:  '#49CCD4'  // cyan
+};
+const IDLE_COLOR = '#051a0d';
 
-// ── Elements ─────────────────────────────────────────────────────────────
-const idleEl        = document.getElementById('idle');
-const revealEl       = document.getElementById('reveal');
-const revealImgEl    = document.getElementById('reveal-img');
-const revealNameEl   = document.getElementById('reveal-name');
-const tickerEl        = document.getElementById('ticker');
-const statusDotEl     = document.getElementById('status-dot');
-const statusTextEl    = document.getElementById('status-text');
-const playerCountEl   = document.getElementById('player-count');
-const particlesEl     = document.getElementById('particles');
-
-// ── Ambient particles ────────────────────────────────────────────────────
-const PARTICLE_COLORS = ['#ffd166','#e91e8c','#06d6a0','#8fd9b0','#ffe08a'];
-function spawnParticle(){
-  const p = document.createElement('div');
-  p.className = 'particle';
-  const size = 4 + Math.random() * 8;
-  const duration = 7000 + Math.random() * 6000;
-  p.style.left = (Math.random() * 100) + '%';
-  p.style.width = size + 'px';
-  p.style.height = size + 'px';
-  p.style.background = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
-  p.style.animationDuration = duration + 'ms';
-  particlesEl.appendChild(p);
-  setTimeout(() => p.remove(), duration + 200);
+function hexToRgba(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return `rgba(${r},${g},${b},${alpha})`;
 }
-setInterval(spawnParticle, 900);
 
-// ── Ticker (last 8 charms received, most recent first) ─────────────────
-const tickerHistory = [];
-function addTickerEntry(name, charm){
-  tickerHistory.unshift({ name, charm });
-  if (tickerHistory.length > 8) tickerHistory.length = 8;
+function applyTheme(hex) {
+  document.body.style.backgroundColor = hex;
+  document.getElementById('ticker-wrap').style.background = hexToRgba(hex, 0.55);
+  document.getElementById('ribbon').style.background = hexToRgba(hex, 0.55);
+}
+const HOLD_MS = 15000; // how long each charm stays on screen
+
+let queue = [];
+let showing = false;
+let tickerHistory = []; // last 8 { name, charm }
+
+const idleEl    = document.getElementById('idle');
+const revealEl  = document.getElementById('reveal');
+const revealImg = document.getElementById('reveal-img');
+const revealName= document.getElementById('reveal-name');
+const dotEl     = document.getElementById('dot');
+const ribbonTxt = document.getElementById('ribbon-text');
+const tickerEl  = document.getElementById('ticker');
+
+function updateRibbon() {
+  const waiting = queue.length; // charms waiting behind the one currently showing (if any)
+  ribbonTxt.textContent = waiting === 1 ? '1 charm in queue' : `${waiting} charms in queue`;
+}
+
+function renderTicker() {
+  if (tickerHistory.length === 0) {
+    tickerEl.innerHTML = '<span>Waiting for the first charm…</span>';
+    return;
+  }
   tickerEl.innerHTML = tickerHistory
-    .map(e => `<span>${escapeHtml(e.name)} — ${CHARMS[e.charm].label}</span>`)
+    .map(t => `<span>💗 ${escapeHtml(t.name)} posted ${CHARM_NAMES[t.charm] || t.charm}</span>`)
     .join('');
 }
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c =>
-    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#x27;' }[c])
-  );
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ── Reveal queue (FIFO, never drops, never interrupts) ──────────────────
-const queue = [];
-let showing = false;
-
-function goIdle(){
-  revealEl.classList.remove('on');
-  idleEl.classList.remove('hidden');
-}
-function goReveal(item){
-  idleEl.classList.add('hidden');
-  revealImgEl.src = `assets/sprites/${CHARMS[item.charm].file}`;
-  revealImgEl.alt = CHARMS[item.charm].label;
-  revealNameEl.textContent = `from ${item.name}`;
-  revealEl.classList.add('on');
-}
-function showNext(){
-  if (queue.length === 0){
+function showNext() {
+  if (queue.length === 0) {
     showing = false;
-    goIdle();
+    revealEl.classList.remove('show');
+    idleEl.style.display = 'flex';
+    applyTheme(IDLE_COLOR);
     return;
   }
   showing = true;
+  idleEl.style.display = 'none';
   const item = queue.shift();
-  goReveal(item);
+  updateRibbon();
+  revealImg.src = `assets/charms/full/${item.charm}.jpg`;
+  revealImg.alt = CHARM_NAMES[item.charm] || item.charm;
+  revealName.textContent = `from ${item.name}`;
+  revealEl.classList.add('show');
+  applyTheme(CHARM_COLORS[item.charm] || IDLE_COLOR);
   setTimeout(showNext, HOLD_MS);
 }
 
-// ── Socket.io ─────────────────────────────────────────────────────────
-const socket = io(SERVER_URL, {
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 2000,
-});
+function enqueueCharm(payload) {
+  if (!payload || !CHARM_NAMES[payload.charm]) return; // ignore malformed/unknown charm ids
+  queue.push(payload);
+  tickerHistory.unshift(payload);
+  tickerHistory = tickerHistory.slice(0, 8);
+  renderTicker();
+  updateRibbon();
+  if (!showing) showNext();
+}
+
+/* ---- floating background particles (idle state ambiance) ---- */
+function spawnParticle() {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = 8 + Math.random() * 18;
+  p.style.width = p.style.height = size + 'px';
+  p.style.left = Math.random() * 100 + 'vw';
+  p.style.background = ['#ff8fb3','#ffd85e','#7dffb0','#6fd8ff'][Math.floor(Math.random()*4)];
+  p.style.setProperty('--dx', (Math.random() * 80 - 40) + 'px');
+  p.style.animationDuration = (8 + Math.random() * 6) + 's';
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 15000);
+}
+setInterval(spawnParticle, 900);
+
+/* ---- socket.io wiring ---- */
+const socket = io(SERVER_URL, { reconnectionAttempts: Infinity, reconnectionDelay: 2000 });
 
 socket.on('connect', () => {
-  statusDotEl.classList.add('connected');
-  statusTextEl.textContent = 'Connected';
+  dotEl.classList.remove('off');
+  updateRibbon();
 });
 socket.on('disconnect', () => {
-  statusDotEl.classList.remove('connected');
-  statusTextEl.textContent = 'Disconnected';
+  dotEl.classList.add('off');
+  ribbonTxt.textContent = 'Reconnecting…';
 });
+// player-count is still emitted by the backend but no longer drives the ribbon —
+// the ribbon now shows queue depth instead (see updateRibbon). Left listening
+// in case it's wanted again later; currently a no-op.
+socket.on('player-count', () => {});
+socket.on('new-charm', payload => enqueueCharm(payload));
 
-socket.on('player-count', count => {
-  const n = Number(count) || 0;
-  playerCountEl.textContent = `${n} player${n === 1 ? '' : 's'}`;
-});
-
-socket.on('new-charm', ({ name, charm } = {}) => {
-  if (!CHARMS[charm]) return; // defensively ignore unrecognized charm ids
-  addTickerEntry(name, charm);
-  queue.push({ name, charm });
-  if (!showing) showNext();
-});
+renderTicker();
 </script>
 </body>
 </html>
