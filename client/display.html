@@ -87,11 +87,12 @@ const CHARM_NAMES = {
   empathy: 'Love & Empathy', nobility: 'Nobility', longevity: 'Longevity',
   vitality: 'Vitality', stability: 'Stability', serenity: 'Serenity'
 };
-// Actual on-disk filenames for each charm's full art (client/assets/sprites/) —
-// numbered/uppercase, not a charms/full/{id}.jpg path.
+// High-res versions (client/assets/sprites/) for the full-screen reveal — much
+// bigger than the small sprites the game itself uses for its charm picker, so
+// object-fit:cover across a whole display screen doesn't look blurry/upscaled.
 const CHARM_FILES = {
-  empathy: '01. EMPATHY.jpg', nobility: '02. NOBILITY.jpg', longevity: '03. LONGEVITY.jpg',
-  vitality: '04. VITALITY.jpg', stability: '05. STABILITY.jpg', serenity: '06. SERENITY.jpg'
+  empathy: '01. EMPATHY highres.jpg', nobility: '02. NOBILITY high res.jpg', longevity: '03. LONGEVITY highres.jpg',
+  vitality: '04. VITALITY highres.jpg', stability: '05. STABILITY highres.jpg', serenity: '06. SERENITY highres.jpg'
 };
 // Exact brand color per charm, matching each charm's own background art
 const CHARM_COLORS = {
@@ -115,7 +116,7 @@ function applyTheme(hex) {
   document.getElementById('ticker-wrap').style.background = hexToRgba(hex, 0.55);
   document.getElementById('ribbon').style.background = hexToRgba(hex, 0.55);
 }
-const HOLD_MS = 15000; // how long each charm stays on screen
+const HOLD_MS = 22000; // how long each charm stays on screen
 
 let queue = [];
 let showing = false;
@@ -161,7 +162,7 @@ function showNext() {
   updateRibbon();
   revealImg.src = `assets/sprites/${CHARM_FILES[item.charm]}`;
   revealImg.alt = CHARM_NAMES[item.charm] || item.charm;
-  revealName.textContent = `from ${item.name}`;
+  revealName.textContent = item.name;
   revealEl.classList.add('show');
   applyTheme(CHARM_COLORS[item.charm] || IDLE_COLOR);
   setTimeout(showNext, HOLD_MS);

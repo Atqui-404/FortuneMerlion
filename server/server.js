@@ -102,13 +102,19 @@ app.post('/score', limiter10, (req, res) => {
     WHERE excluded.score > scores.score
   `).run(cleanName, phone, score);
  
-  // Rank = number of distinct players with a strictly higher score + 1
+  // Rank + score reflect THIS attempt, not necessarily the player's stored
+  // best — "where would this specific play currently place on the board",
+  // even if it didn't beat their personal best and so wasn't saved as their
+  // new leaderboard entry. The leaderboard table itself (one row per phone,
+  // best score only) is unaffected by this — only what we tell the CLIENT
+  // about THIS submission changes.
+  const rank = db.prepare('SELECT COUNT(*) AS cnt FROM scores WHERE score > ?').get(score).cnt + 1;
   const storedScore = db.prepare('SELECT score FROM scores WHERE phone = ?').get(phone).score;
-  const rank  = db.prepare('SELECT COUNT(*) AS cnt FROM scores WHERE score > ?').get(storedScore).cnt + 1;
+  const isNewBest = score >= storedScore; // true if this attempt IS what's now stored (new best or tied)
   const count = db.prepare('SELECT COUNT(*) AS cnt FROM scores').get().cnt;
   io.emit('player-count', count);
- 
-  res.json({ ok: true, rank, score: storedScore });
+
+  res.json({ ok: true, rank, score, isNewBest });
   } catch(err) {
     console.error('POST /score error:', err.message);
     res.status(500).json({ error: 'Server error — please try again.' });

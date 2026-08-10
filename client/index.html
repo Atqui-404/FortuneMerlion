@@ -135,9 +135,9 @@
     .form-g{margin-bottom:calc(6px * var(--scale,1));text-align:center;}
     .form-g label{display:block;font-size:calc(11px * var(--scale,1));color:#5a3210;margin-bottom:2px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;}
     .form-g input{
-      width:95%;padding:calc(9px * var(--scale,1)) calc(12px * var(--scale,1));
+      width:95%;padding:calc(15px * var(--scale,1)) calc(14px * var(--scale,1));
       border:2px solid #b8832a;border-radius:8px;
-      font-size:calc(13px * var(--scale,1));background:#fffbf0;color:#333;outline:none;
+      font-size:calc(17px * var(--scale,1));background:#fffbf0;color:#333;outline:none;
       text-align:center;
     }
     .form-g input:focus{border-color:#e8a030;}
@@ -247,7 +247,7 @@
     </div>
     <div class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(20px * var(--scale,1));margin-bottom:calc(28px * var(--scale,1));margin-right:2%;">
       <div id="btn-skip" class="img-btn" style="width:calc(200px * var(--scale,1));"><img src="assets/ui/SKIP.png" alt="Skip — back to home"></div>
-      <div id="btn-submit" class="img-btn" style="width:calc(150px * var(--scale,1));"><img id="img-submit-btn" src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
+      <div id="btn-submit" class="img-btn" style="width:calc(210px * var(--scale,1));"><img id="img-submit-btn" src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
     </div>
   </div>
 
@@ -256,7 +256,7 @@
     <div id="leaderboard-card" style="position:relative;width:min(96%,560px);">
       <img src="assets/ui/LEADERBOARD.png" style="width:100%;display:block;" alt="Leaderboard">
       <!-- scores injected here, centred in the blank parchment area of the image -->
-      <div id="leader-list" style="position:absolute;top:calc(32% + 10px * var(--scale,1));bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
+      <div id="leader-list" style="position:absolute;top:calc(36% + 10px * var(--scale,1));bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
     <div id="leaderboard-btn-row" class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(20px * var(--scale,1));"></div>
@@ -466,7 +466,9 @@ function makeImgBtn(src, alt, onClick){
 // fromScore: true when reached right after submitting a score (shows Post & Pose too);
 // false/omitted when reached via the title-screen trophy icon (Back to Home only —
 // there's no submittedName context to post with in that flow).
-async function showLeaderboard(playerName=null, playerScore=null, playerRank=null, fromScore=false){
+// isNewBest: from POST /score's response — true only if THIS attempt is what's now
+// stored as the player's leaderboard entry (so it can also appear in the top 5).
+async function showLeaderboard(playerName=null, playerScore=null, playerRank=null, fromScore=false, isNewBest=false){
   showOv('ov-leaderboard');
   const card = document.getElementById('leaderboard-card');
   card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
@@ -492,7 +494,9 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
       listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-size:calc(13px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;">No scores yet — be the first!</div>`;
       return;
     }
-    let html = top.map((r, i) => ROW(i+1, r.name, r.score, false)).join('');
+    // Only highlight a top-5 row when this attempt IS the player's stored best —
+    // otherwise nothing in the top 5 corresponds to what was just played.
+    let html = top.map((r, i) => ROW(i+1, r.name, r.score, isNewBest && playerRank !== null && (i+1) === playerRank)).join('');
     // Player's own rank always appears below a separator, even if they're already
     // visible in the top 5 above — this row is always their own result, highlighted.
     if(playerName !== null && playerRank !== null){
@@ -1083,7 +1087,9 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
     const res = await apiPost('/score', { name, phone, score });
     if(res.ok){
       submittedName = name;
-      showLeaderboard(name, res.score ?? score, res.rank, true);
+      // res.score/res.rank reflect THIS attempt specifically (not necessarily the
+      // player's all-time best) — always use these, never a locally-cached value.
+      showLeaderboard(name, res.score, res.rank, true, res.isNewBest);
     } else {
       errEl.textContent = escHtml(res.error || 'Something went wrong.');
     }
