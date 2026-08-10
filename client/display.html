@@ -87,6 +87,12 @@ const CHARM_NAMES = {
   empathy: 'Love & Empathy', nobility: 'Nobility', longevity: 'Longevity',
   vitality: 'Vitality', stability: 'Stability', serenity: 'Serenity'
 };
+// Actual on-disk filenames for each charm's full art (client/assets/sprites/) —
+// numbered/uppercase, not a charms/full/{id}.jpg path.
+const CHARM_FILES = {
+  empathy: '01. EMPATHY.jpg', nobility: '02. NOBILITY.jpg', longevity: '03. LONGEVITY.jpg',
+  vitality: '04. VITALITY.jpg', stability: '05. STABILITY.jpg', serenity: '06. SERENITY.jpg'
+};
 // Exact brand color per charm, matching each charm's own background art
 const CHARM_COLORS = {
   empathy:   '#FF829A', // pink
@@ -130,11 +136,11 @@ function updateRibbon() {
 
 function renderTicker() {
   if (tickerHistory.length === 0) {
-    tickerEl.innerHTML = '<span>Waiting for the first charm…</span>';
+    tickerEl.innerHTML = '<span>Waiting for the next charm…</span>';
     return;
   }
   tickerEl.innerHTML = tickerHistory
-    .map(t => `<span>💗 ${escapeHtml(t.name)} posted ${CHARM_NAMES[t.charm] || t.charm}</span>`)
+    .map(t => `<span>${escapeHtml(t.name)} posted ${CHARM_NAMES[t.charm] || t.charm}</span>`)
     .join('');
 }
 function escapeHtml(s) {
@@ -153,7 +159,7 @@ function showNext() {
   idleEl.style.display = 'none';
   const item = queue.shift();
   updateRibbon();
-  revealImg.src = `assets/charms/full/${item.charm}.jpg`;
+  revealImg.src = `assets/sprites/${CHARM_FILES[item.charm]}`;
   revealImg.alt = CHARM_NAMES[item.charm] || item.charm;
   revealName.textContent = `from ${item.name}`;
   revealEl.classList.add('show');
