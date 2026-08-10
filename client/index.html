@@ -10,7 +10,7 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html,body{
       width:100%;height:100%;
-      background:#1a1a2e;
+      background:#fff;
       overflow:hidden;
       display:flex;align-items:center;justify-content:center;
       touch-action:none;
@@ -82,7 +82,7 @@
     #btn-fire-wrap:active{transform:translateX(-50%) scale(.92);}
 
     /* Scoreboard panel moved higher on screen */
-    #ov-scoreboard{ justify-content:flex-start; padding-top:20px; }
+    #ov-scoreboard{ justify-content:flex-start; padding-top:70px; }
 
     /* ── Wooden panel ────────────────────────────────────────────── */
     .panel{
@@ -170,7 +170,7 @@
     <div id="title-content" style="display:flex;flex-direction:column;align-items:center;gap:0;margin-top:70px;">
       <img src="assets/ui/GAME LOGO.png" style="width:320px;margin-bottom:-100px;" alt="Fortune Merlion: Blooming Hearts">
       <!-- wrapper so we can overlay a precise hit zone over the button visual -->
-      <div id="play-btn-wrap" style="position:relative;width:300px;visibility:hidden;">
+      <div id="play-btn-wrap" style="position:relative;width:300px;margin-top:-50px;visibility:hidden;">
         <img src="assets/ui/PLAY.png" style="width:100%;display:block;pointer-events:none;" alt="Play">
         <div id="btn-play" style="position:absolute;top:33%;left:10%;right:10%;height:27%;cursor:pointer;border-radius:30px;"></div>
       </div>
@@ -226,9 +226,9 @@
         <div class="err" id="entry-err"></div>
       </div>
     </div>
-    <div class="img-btn-row" style="margin-top:18px;flex-direction:column;gap:12px;margin-right:2%;">
-      <div id="btn-submit" class="img-btn"><img id="img-submit-btn" src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
-      <div id="btn-skip" class="img-btn"><img src="assets/ui/SKIP.png" alt="Skip — back to home"></div>
+    <div class="img-btn-row" style="--btn-w:150px;margin-top:20px;margin-bottom:28px;margin-right:2%;">
+      <div id="btn-skip" class="img-btn" style="width:175px;"><img src="assets/ui/SKIP.png" alt="Skip — back to home"></div>
+      <div id="btn-submit" class="img-btn" style="width:130px;"><img id="img-submit-btn" src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
     </div>
   </div>
 
@@ -273,9 +273,9 @@
       </div>
 
       <!-- normal document flow, AFTER the image wrapper — always below it, never overlapping -->
-      <div class="img-btn-row" style="--btn-w:150px;margin-top:-24px;margin-bottom:10px;">
-        <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
+      <div class="img-btn-row" style="--btn-w:150px;margin-top:-4px;margin-bottom:10px;">
         <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
+        <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
       </div>
     </div>
   </div>
@@ -413,8 +413,8 @@ function truncName(s){ return s.length > 8 ? s.slice(0,8) + '…' : s; }
 const ROW = (rank, name, sc, pink=false) => {
   const c = pink ? '#e91e8c' : '#3a1500';
   const f = "'Arial Rounded MT Bold',Arial,sans-serif";
-  return `<div style="display:flex;align-items:baseline;width:100%;max-width:100%;box-sizing:border-box;padding:0;overflow:hidden;">
-    <span style="font-size:19px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:52px;">#${String(rank).padStart(2,'0')}</span>
+  return `<div style="display:flex;align-items:baseline;width:100%;max-width:100%;box-sizing:border-box;padding-left:10px;overflow:hidden;">
+    <span style="font-size:19px;font-weight:900;color:${c};font-family:${f};flex-shrink:0;width:52px;">${ordinal(rank)}</span>
     <span style="font-size:19px;font-weight:900;color:${c};font-family:${f};flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
     <span style="font-size:19px;font-weight:900;color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:5px;">${sc}</span>
   </div>`;
@@ -443,7 +443,10 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
 
   const btnRow = document.getElementById('leaderboard-btn-row');
   btnRow.innerHTML = '';
-  btnRow.appendChild(makeImgBtn('assets/ui/BACK TO HOME.png', 'Back to Home', () => showOv('ov-title')));
+  btnRow.appendChild(makeImgBtn('assets/ui/BACK TO HOME.png', 'Back to Home', () => {
+    gameSceneRef?._ensureBgmPlaying();
+    showOv('ov-title');
+  }));
   if(fromScore && submittedName){
     btnRow.appendChild(makeImgBtn('assets/ui/POST AND POSE.png', 'Post & Pose', () => showCharm()));
   }
@@ -457,9 +460,10 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
       listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-size:13px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;">No scores yet — be the first!</div>`;
       return;
     }
-    let html = top.map((r, i) => ROW(i+1, r.name, r.score, playerRank !== null && (i+1) === playerRank)).join('');
-    // show player's own rank below a separator if outside top 5
-    if(playerName !== null && playerRank !== null && playerRank > 5){
+    let html = top.map((r, i) => ROW(i+1, r.name, r.score, false)).join('');
+    // Player's own rank always appears below a separator, even if they're already
+    // visible in the top 5 above — this row is always their own result, highlighted.
+    if(playerName !== null && playerRank !== null){
       html += `<div style="border-top:1px dashed #b8832a;margin:4px 0;"></div>`;
       html += ROW(playerRank, playerName, playerScore, true);
     }
@@ -687,6 +691,22 @@ class GameScene extends Phaser.Scene {
     this.sfxFire = this.sound.add('sfx_fire', { volume:0.6 });
     this.sfxHit  = this.sound.add('sfx_hit',  { volume:0.7 });
     this.sfxMiss = this.sound.add('sfx_miss', { volume:0.7 });
+
+    // Attempt to start ambient music as soon as the Home screen loads, not just
+    // once the player reaches the game. Mobile browsers block audio before any
+    // user gesture — if this is silently blocked, unlockAudio() below catches
+    // the first tap anywhere on the page and starts it then instead.
+    this._ensureBgmPlaying();
+  }
+
+  // Starts bgm if it isn't already playing (idempotent — safe to call from
+  // the Home screen, Play Again, startGame, etc. without ever restarting a
+  // track that's already looping).
+  _ensureBgmPlaying(){
+    if(!this.bgm.isPlaying){
+      this.bgm.setVolume(0.35);
+      this.bgm.play();
+    }
   }
 
   // ── Public: called from DOM buttons ───────────────────────────────────────
@@ -707,9 +727,10 @@ class GameScene extends Phaser.Scene {
     document.getElementById('btn-fire-wrap').classList.add('on');
     this._resetEntities();
 
-    this.bgm.stop();
-    this.bgm.setVolume(0.35);
-    this.bgm.play();
+    // bgm is already playing continuously since the Home screen (or since
+    // "Play Again" was clicked, see btn-play-again below) — this is just a
+    // safety net in case it somehow isn't running yet.
+    this._ensureBgmPlaying();
 
     // Countdown clock (always fresh after removeAllEvents)
     this._timerEvt = this.time.addEvent({
@@ -956,6 +977,9 @@ const game = new Phaser.Game({
 function unlockAudio(){
   const ctx = game.sound && game.sound.context;
   if(ctx && ctx.state === 'suspended') ctx.resume();
+  // If the Home-screen bgm.play() attempt (see GameScene.create) was blocked
+  // by the browser's autoplay policy, start it now that we have a real gesture.
+  gameSceneRef?._ensureBgmPlaying();
 }
 document.addEventListener('pointerdown', unlockAudio, { once:true });
 document.addEventListener('touchend', unlockAudio, { once:true });
@@ -970,6 +994,7 @@ document.getElementById('btn-play').addEventListener('click', () => {
 });
 
 document.getElementById('btn-close-tutorial').addEventListener('click', () => {
+  gameSceneRef?._ensureBgmPlaying();
   showOv('ov-title');
 });
 
@@ -979,6 +1004,10 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
 });
 
 document.getElementById('btn-play-again').addEventListener('click', () => {
+  // Game-over faded bgm out and stopped it — restart it right away so it's
+  // already playing through the tutorial screen, not just once Start Game
+  // is pressed.
+  gameSceneRef?._ensureBgmPlaying();
   showOv('ov-tutorial');
   const card = document.getElementById('tutorial-card');
   card.classList.remove('pop-in');
@@ -1035,6 +1064,9 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
 });
 
 document.getElementById('btn-skip').addEventListener('click', () => {
+  // Game-over faded bgm out and stopped it — restart it now that we're heading
+  // back to the title screen, same as Play Again does.
+  gameSceneRef?._ensureBgmPlaying();
   showOv('ov-title');
 });
 
@@ -1043,6 +1075,7 @@ document.getElementById('btn-leaderboard-title').addEventListener('click', () =>
 });
 
 document.getElementById('btn-charm-home').addEventListener('click', () => {
+  gameSceneRef?._ensureBgmPlaying();
   showOv('ov-title');
 });
 
@@ -1067,6 +1100,7 @@ document.getElementById('btn-post-charm').addEventListener('click', async () => 
 });
 
 document.getElementById('btn-close-finish').addEventListener('click', () => {
+  gameSceneRef?._ensureBgmPlaying();
   showOv('ov-title');
 });
 </script>
