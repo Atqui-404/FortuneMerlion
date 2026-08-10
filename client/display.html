@@ -105,6 +105,17 @@ const CHARM_COLORS = {
 };
 const IDLE_COLOR = '#051a0d';
 
+// Preload every charm's full-res art into the browser cache as soon as the
+// page loads, not on first reveal — these are multi-MB files, so without
+// this the very first time each charm is posted it'd stall on the network
+// fetch. Kept in an array so the Image objects (and their in-flight
+// requests) aren't garbage-collected before they finish loading.
+const preloadedCharmImages = Object.values(CHARM_FILES).map(file => {
+  const img = new Image();
+  img.src = `assets/sprites/${file}`;
+  return img;
+});
+
 function hexToRgba(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
   const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
@@ -116,7 +127,7 @@ function applyTheme(hex) {
   document.getElementById('ticker-wrap').style.background = hexToRgba(hex, 0.55);
   document.getElementById('ribbon').style.background = hexToRgba(hex, 0.55);
 }
-const HOLD_MS = 22000; // how long each charm stays on screen
+const HOLD_MS = 30000; // how long each charm stays on screen
 
 let queue = [];
 let showing = false;
@@ -141,7 +152,7 @@ function renderTicker() {
     return;
   }
   tickerEl.innerHTML = tickerHistory
-    .map(t => `<span>${escapeHtml(t.name)} posted ${CHARM_NAMES[t.charm] || t.charm}</span>`)
+    .map(t => `<span>${escapeHtml(t.name)} - ${CHARM_NAMES[t.charm] || t.charm}</span>`)
     .join('');
 }
 function escapeHtml(s) {
