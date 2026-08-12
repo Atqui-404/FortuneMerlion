@@ -15,15 +15,10 @@
       display:flex;align-items:center;justify-content:center;
       touch-action:none;
     }
-    /* Phone-shaped frame: always keeps the 480:845 portrait ratio and scales
-       to fit whatever viewport it's in (small phone, big phone, tablet,
-       laptop) — capped so it doesn't stretch into a full-bleed rectangle on
-       wide/tall screens like an iPad or desktop browser.
-       Width AND height are both computed directly via min() (mirrored
-       formulas) instead of relying on the CSS `aspect-ratio` property —
-       older mobile browsers don't support aspect-ratio, and without it the
-       box's height falls back to being driven by its content (the Phaser
-       canvas), which is what was causing the frame to balloon in size. */
+    /* Phone-shaped frame, always 480:845, capped for tablets/desktop.
+       Width/height both use min() instead of aspect-ratio — older mobile
+       browsers don't support it, and without it height falls back to the
+       Phaser canvas's content size, ballooning the frame. */
     #game-wrap{
       position:relative;
       width:  min(94vw, 94vh * 480 / 845, 600px);
@@ -31,9 +26,7 @@
       overflow:hidden;
     }
 
-    /* Standard visual size for every image-based button (matches PLAY's rendered pill width).
-       --btn-w bakes in var(--scale) so buttons stay proportioned to game-wrap
-       instead of staying a constant px size regardless of it. */
+    /* Standard button width, scaled to game-wrap via var(--scale). */
     :root{ --btn-w:calc(195px * var(--scale,1)); }
     .img-btn{ width:var(--btn-w); cursor:pointer; flex-shrink:0; -webkit-user-select:none;user-select:none;-webkit-touch-callout:none; }
     .img-btn img{ width:100%; display:block; pointer-events:none; }
@@ -53,10 +46,7 @@
     }
 
     /* ── HUD ─────────────────────────────────────────────────────── */
-    /* Sizes below are all calc(REFpx * var(--scale)) rather than fixed px —
-       --scale is game-wrap's actual width ÷ its 480px reference width (set
-       in fitGameWrap()), so the hearts/timer/score track game-wrap's real
-       rendered size instead of staying a constant size regardless of it. */
+    /* calc(REFpx * var(--scale)) throughout so HUD elements track game-wrap's real size. */
     #hud{
       position:absolute;top:0;left:0;right:0;
       padding:calc(10px * var(--scale,1)) calc(14px * var(--scale,1));
@@ -75,8 +65,7 @@
     }
 
     /* ── Fire button ─────────────────────────────────────────────── */
-    /* left:47% matches mX (merlion's shot-origin X in GameScene) rather than
-       dead-center, since the merlion sprite itself isn't centered in GAME.jpg */
+    /* left:47% matches mX (merlion's shot-origin) — merlion isn't centered in GAME.jpg */
     #btn-fire-wrap{
       position:absolute;left:47%;bottom:calc(34px * var(--scale,1));
       transform:translateX(-50%);
@@ -90,48 +79,49 @@
     /* Scoreboard panel moved higher on screen */
     #ov-scoreboard{ justify-content:flex-start; padding-top:calc(70px * var(--scale,1)); }
 
-    /* ── Wooden panel ────────────────────────────────────────────── */
+    /* ── Wooden panel (quit-confirm dialog) ─────────────────────────── */
     .panel{
       background:#fdf3dc;
-      border:6px solid #8b5e1a;
-      border-radius:18px;
+      border:calc(6px * var(--scale,1)) solid #8b5e1a;
+      border-radius:calc(18px * var(--scale,1));
       box-shadow:0 6px 28px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.35);
-      padding:24px 28px;
+      padding:calc(22px * var(--scale,1)) calc(24px * var(--scale,1));
       text-align:center;
-      width:420px;
+      width:calc(300px * var(--scale,1));
     }
     .panel-head{
-      font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:24px;font-weight:bold;
-      color:#6b3c10;margin-bottom:10px;
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(20px * var(--scale,1));font-weight:bold;
+      color:#6b3c10;margin-bottom:calc(8px * var(--scale,1));
       text-shadow:0 1px 0 rgba(255,255,255,.5);
+    }
+    .panel-body{
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(13px * var(--scale,1));
+      color:#5a3210;line-height:1.4;
     }
 
     /* ── Buttons ─────────────────────────────────────────────────── */
     .btn{
-      display:inline-block;padding:12px 28px;
-      border-radius:22px;border:none;cursor:pointer;
-      font-size:17px;font-weight:bold;font-family:'Arial Rounded MT Bold',Arial,sans-serif;
+      display:inline-block;padding:calc(10px * var(--scale,1)) calc(22px * var(--scale,1));
+      border-radius:calc(20px * var(--scale,1));border:none;cursor:pointer;
+      font-size:calc(15px * var(--scale,1));font-weight:bold;font-family:'Arial Rounded MT Bold',Arial,sans-serif;
       letter-spacing:.5px;transition:transform .08s;
     }
     .btn:active{transform:scale(.95);}
     .btn-green{
       background:linear-gradient(180deg,#74cc52,#3e8f22);
-      color:#fff;border:3px solid #2d6a14;
+      color:#fff;border:calc(3px * var(--scale,1)) solid #2d6a14;
       text-shadow:0 1px 2px rgba(0,0,0,.4);
       box-shadow:0 3px 0 #1d4a0d;
     }
     .btn-red{
       background:linear-gradient(180deg,#e06060,#c0392b);
-      color:#fff;border:3px solid #922b21;
+      color:#fff;border:calc(3px * var(--scale,1)) solid #922b21;
       box-shadow:0 3px 0 #6e1e14;
     }
-    .btn-row{display:flex;gap:14px;justify-content:center;margin-top:16px;}
+    .btn-row{display:flex;gap:calc(14px * var(--scale,1));justify-content:center;margin-top:calc(16px * var(--scale,1));}
 
     /* ── Entry form ──────────────────────────────────────────────── */
-    /* Font sizes/padding here use calc(REFpx*var(--scale)) — the card's own
-       width already tracks game-wrap correctly (min(82%,440px)), but fixed-px
-       text inside it wouldn't shrink to match on a small game-wrap, causing
-       placeholder/paragraph text to overflow and get clipped. */
+    /* calc(REFpx*var(--scale)) throughout so text shrinks with a small game-wrap too. */
     .form-g{margin-bottom:calc(6px * var(--scale,1));text-align:center;}
     .form-g label{display:block;font-size:calc(14px * var(--scale,1));color:#5a3210;margin-bottom:2px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;}
     .form-g input{
@@ -141,8 +131,9 @@
       text-align:center;
     }
     .form-g input:focus{border-color:#e8a030;}
+    /* Placeholders only — the long phone hint clips at the base 17px; typed values stay full-size. */
+    #inp-name::placeholder, #inp-phone::placeholder{ font-size:calc(12.5px * var(--scale,1)); }
     .err{color:#c0392b;font-size:calc(14px * var(--scale,1));min-height:calc(14px * var(--scale,1));margin-bottom:3px;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-align:center;}
-    .pdpa{font-size:calc(14px * var(--scale,1));color:#7b5020;line-height:1.3;margin:3px 0 4px;text-align:center;}
 
     /* ── Score display ───────────────────────────────────────────── */
     #final-score{
@@ -157,6 +148,82 @@
       100%{ transform:scale(1);   opacity:1; }
     }
     .pop-in{ animation:pop-in 0.45s cubic-bezier(.22,.68,0,1.4) forwards; }
+    /* Variant for left:50%+translateX(-50%)-centered elements — .pop-in's
+       transform:scale() would otherwise replace and lose the centering. */
+    @keyframes pop-in-centered{
+      0%  { transform:translateX(-50%) scale(0.4); opacity:0; }
+      70% { transform:translateX(-50%) scale(1.12); opacity:1; }
+      100%{ transform:translateX(-50%) scale(1);   opacity:1; }
+    }
+    .pop-in-centered{ animation:pop-in-centered 0.45s cubic-bezier(.22,.68,0,1.4) forwards; }
+
+    /* ── Ordinal superscript (1st/2nd/3rd/4th) ──────────────────────── */
+    sup{ font-size:0.6em; vertical-align:super; }
+
+    /* ── Height-driven button variant ───────────────────────────────
+       For rows where the buttons' source PNGs have different pill aspect
+       ratios (e.g. "POST" vs "BACK TO HOME") — same width would render one
+       taller than the other, so this sizes by height instead. */
+    .img-btn--h{ width:auto; height:var(--btn-h, calc(73px * var(--scale,1))); }
+    .img-btn--h img{ width:auto; height:100%; }
+
+    /* ── Checkbox rows (PDPA / T&C consent) ─────────────────────────── */
+    .chk-row{ display:flex; align-items:flex-start; gap:calc(7px * var(--scale,1)); text-align:left; margin:calc(4px * var(--scale,1)) 0; }
+    .chk-row input[type="checkbox"]{
+      width:calc(17px * var(--scale,1)); height:calc(17px * var(--scale,1));
+      flex-shrink:0; margin-top:calc(1px * var(--scale,1));
+      accent-color:#3e8f22; cursor:pointer;
+    }
+    .chk-row label{
+      font-size:calc(10.5px * var(--scale,1)); color:#7b5020; line-height:1.35;
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif; cursor:pointer;
+    }
+    .chk-row a{ color:#0a5fc0; text-decoration:underline; cursor:pointer; }
+    @keyframes shake{
+      10%,90%{ transform:translateX(-2px); }
+      20%,80%{ transform:translateX(4px); }
+      30%,50%,70%{ transform:translateX(-7px); }
+      40%,60%{ transform:translateX(7px); }
+    }
+    .shake{ animation:shake .5s; }
+    /* Dims a baked-in-image button (e.g. CONTEST.png's PROCEED) while its gating condition isn't met. */
+    .btn-dim{ position:absolute; background:rgba(255,255,255,.6); border-radius:25px; pointer-events:none; transition:opacity .15s; }
+
+    /* ── Terms & Conditions modal ───────────────────────────────────── */
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.72);
+      z-index:1000; display:none; align-items:center; justify-content:center; padding:24px;
+    }
+    .modal-backdrop.on{ display:flex; }
+    /* Scrollable text over T_C.png's blank area. padding-right keeps text
+       clear of the scrollbar, which sits closer to the frame edge. */
+    .modal-body{
+      font-size:calc(10px * var(--scale,1)); line-height:1.5; color:#3a2000;
+      font-family:Arial,sans-serif; white-space:pre-wrap;
+      padding-right:calc(20px * var(--scale,1));
+    }
+
+    /* ── Sound-on prompt (Home screen) ──────────────────────────────── */
+    #sound-prompt{
+      position:absolute; left:50%; top:1.5%; transform:translateX(-50%);
+      width:82%; max-width:320px; cursor:pointer;
+      transition:opacity .4s ease;
+    }
+    #sound-prompt img{ width:100%; display:block; pointer-events:none; }
+    #sound-prompt.fade-out{ opacity:0; pointer-events:none; }
+
+    /* ── In-game exit button ────────────────────────────────────────── */
+    /* Sits below #hud's box (62px*scale) rather than the corner, which hud-score already occupies. */
+    #btn-exit-game{
+      position:absolute; top:calc(66px * var(--scale,1)); right:calc(12px * var(--scale,1));
+      width:calc(34px * var(--scale,1)); height:calc(34px * var(--scale,1));
+      display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.5); border:2px solid rgba(255,255,255,.75); border-radius:50%;
+      color:#fff; font-size:calc(18px * var(--scale,1)); font-weight:900;
+      font-family:Arial,sans-serif; cursor:pointer; z-index:70;
+      -webkit-user-select:none; user-select:none;
+    }
+    #btn-exit-game.on{ display:flex; }
   </style>
 </head>
 <body>
@@ -169,24 +236,29 @@
     <div id="hud-score" class="hud-num" style="color:#e91e8c;">0</div>
   </div>
 
+  <!-- ── EXIT (mid-game, back to Home) ─────────────────────────────── -->
+  <div id="btn-exit-game">✕</div>
+
+  <!-- ── QUIT CONFIRM (✕ pauses the game and asks first) ──────────── -->
+  <div class="ov" id="ov-quit-confirm" style="background:rgba(0,0,0,.65);">
+    <div class="panel pop-in">
+      <div class="panel-head">Quit this game?</div>
+      <p class="panel-body">Your current progress will be lost.</p>
+      <div class="btn-row">
+        <button type="button" class="btn btn-red" id="btn-quit-confirm">Quit</button>
+        <button type="button" class="btn btn-green" id="btn-quit-resume">Resume</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── FIRE BUTTON ────────────────────────────────────────────── -->
   <div id="btn-fire-wrap">
     <img src="assets/ui/FIRE BUTTON.png" alt="Fire">
   </div>
 
   <!-- ── TITLE ──────────────────────────────────────────────────── -->
-  <!-- Every element here is position:absolute with left/top/width given as
-       percentages of #game-wrap (the game's 480×845 reference frame), not
-       fixed px or vw/vh. #game-wrap always keeps a 480:845 ratio but its
-       absolute pixel size varies a lot across devices (small phone vs wide
-       desktop) — fixed-px children (the old flex+margin layout) stayed a
-       constant size regardless, so they drifted out of proportion with the
-       background art on aspect ratios far from 480:845. Percentages scale
-       together with game-wrap automatically, same convention already used
-       by #btn-close-tutorial/#btn-start-game/#btn-play. Values below were
-       measured off the previous fixed-px layout at a viewport forcing
-       game-wrap to exactly 480×845, so the composition is unchanged there
-       and now stays consistent at every other size too. -->
+  <!-- All children use %-based position/size (of game-wrap's 480×845
+       frame), not fixed px, so they scale with game-wrap on any device. -->
   <div class="ov on" id="ov-title">
     <img src="assets/ui/GAME LOGO.png" style="position:absolute;left:16.67%;top:12.44%;width:66.66%;pointer-events:none;" alt="Fortune Merlion: Blooming Hearts">
     <!-- wrapper so we can overlay a precise hit zone over the button visual -->
@@ -195,34 +267,47 @@
       <div id="btn-play" style="position:absolute;top:33%;left:10%;right:10%;height:27%;cursor:pointer;border-radius:30px;"></div>
     </div>
     <div id="btn-leaderboard-title" style="position:absolute;top:1.89%;right:3.33%;width:10%;height:5.68%;background:rgba(0,0,0,.45);border:2px solid rgba(255,226,52,.7);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:calc(24px * var(--scale,1));visibility:hidden;">🏆</div>
+    <!-- Top band, above GAME LOGO and clear of the trophy icon at its capped width. -->
+    <div id="sound-prompt">
+      <img src="assets/ui/SOUND.png" alt="Turn on your phone's sound for a better gameplay experience">
+    </div>
+    <!-- Visit Shop sits just below the PLAY button — kept small so it
+    doesn't cover the little fountain-merlion artwork at the very
+    bottom of the Home background. -->
+    <a id="btn-visit-shop" href="https://www.unigonsplay.com" target="_blank" rel="noopener"
+      style="position:absolute;left:50%;top:80%;transform:translateX(-50%);width:28%;max-width:130px;display:block;visibility:hidden;">
+      <img src="assets/ui/VISIT SHOP.png" style="width:100%;display:block;pointer-events:none;" alt="Visit Shop">
+    </a>
   </div>
 
   <!-- ── HOW TO PLAY ─────────────────────────────────────────────── -->
   <div class="ov" id="ov-tutorial" style="background:rgba(0,0,0,.55);">
-    <div id="tutorial-card" style="position:relative;width:min(97%,540px);">
-      <img src="assets/ui/HOW TO PLAY.png" style="width:100%;display:block;" alt="How to Play">
-      <!-- invisible hit zone over the X button drawn in the image (top-right) -->
+    <!-- All card overlays share a 420×520 reference box via calc(px*scale)
+         — square assets hit the 420 width cap, taller ones hit 520 height. -->
+    <div id="tutorial-card" style="position:relative;width:calc(420px * var(--scale,1));">
+      <img src="assets/ui/NEW PLAY.png" style="width:100%;display:block;" alt="How to Play">
+      <!-- hit zone over the ✕ drawn in the image (top-right) -->
       <div id="btn-close-tutorial"
-        style="position:absolute;top:4%;right:12%;width:15%;padding-bottom:12%;cursor:pointer;border-radius:50%;"></div>
+        style="position:absolute;top:0%;right:12%;width:14%;padding-bottom:14%;cursor:pointer;border-radius:50%;"></div>
       <!-- invisible hit zone over the START GAME button drawn in the image (bottom centre) -->
       <div id="btn-start-game"
-        style="position:absolute;bottom:3%;left:26%;right:26%;height:10%;cursor:pointer;border-radius:25px;"></div>
+        style="position:absolute;bottom:3%;left:24%;right:24%;height:13%;cursor:pointer;border-radius:25px;"></div>
     </div>
   </div>
 
   <!-- ── SCOREBOARD ─────────────────────────────────────────────── -->
   <div class="ov" id="ov-scoreboard" style="background:rgba(0,0,0,.6);">
-    <div style="position:relative;width:min(92%,480px);">
-      <img src="assets/ui/SCOREBOARD.png" style="width:100%;display:block;" alt="Scoreboard">
+    <div style="position:relative;width:calc(355px * var(--scale,1));">
+      <img src="assets/ui/scoreboard_bright.png" style="width:100%;display:block;" alt="Scoreboard">
       <!-- score overlaid in the blank parchment area -->
-      <div style="position:absolute;top:26%;bottom:6%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
+      <div style="position:absolute;top:19%;bottom:11%;left:12%;right:12%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
         <div style="font-size:calc(40px * var(--scale,1));color:#1a0a00;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:900;line-height:1;margin-bottom:8px;text-shadow:1px 1px 0 rgba(255,255,255,.4);white-space:nowrap;">GAME OVER</div>
         <div style="font-size:calc(17px * var(--scale,1));color:#5a3210;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;letter-spacing:1px;margin-bottom:2px;">YOUR SCORE:</div>
         <div id="final-score" style="font-size:calc(82px * var(--scale,1));font-weight:900;color:#e91e8c;line-height:1;font-family:'Arial Rounded MT Bold',Arial,sans-serif;text-shadow:2px 2px 0 rgba(0,0,0,.1);">0</div>
       </div>
     </div>
-    <!-- Buttons live below the panel, well clear of the previous screen's fire button -->
-    <div class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(-14px * var(--scale,1));gap:calc(8px * var(--scale,1));">
+    <!-- margin-top:20px matches every other card+button-row screen. -->
+    <div class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(20px * var(--scale,1));gap:calc(8px * var(--scale,1));">
       <div id="btn-play-again" class="img-btn"><img src="assets/ui/PLAY AGAIN.png" alt="Play Again"></div>
       <div id="btn-submit-score" class="img-btn"><img src="assets/ui/pixelcut_4 10.png" alt="Submit Score"></div>
     </div>
@@ -230,9 +315,9 @@
 
   <!-- ── ENTRY FORM ──────────────────────────────────────────────── -->
   <div class="ov" id="ov-entry" style="background:rgba(0,0,0,.6);">
-    <div id="entry-card" style="position:relative;width:min(92%,505px);margin-right:2%;">
-      <img src="assets/ui/SUBMIT.png" style="width:100%;display:block;" alt="Submit Your Score">
-      <div style="position:absolute;top:27%;bottom:7%;left:18%;right:18%;display:flex;flex-direction:column;justify-content:center;">
+    <div id="entry-card" style="position:relative;width:calc(347px * var(--scale,1));margin-right:2%;">
+      <img src="assets/ui/NEW SUBMIT.png" style="width:100%;display:block;" alt="Submit Your Score">
+      <div style="position:absolute;top:27%;bottom:14%;left:18%;right:18%;display:flex;flex-direction:column;justify-content:center;">
         <div class="form-g">
           <label>Name (max 20 characters)</label>
           <input type="text" id="inp-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false">
@@ -241,7 +326,10 @@
           <label>Singapore Mobile Number</label>
           <input type="tel" id="inp-phone" maxlength="8" placeholder="8 digits, starting with 8 or 9" inputmode="numeric">
         </div>
-        <p class="pdpa">Your mobile number is collected solely to contact the winner. It will never be displayed publicly and will be deleted within 30 days after the event.</p>
+        <div class="chk-row">
+          <input type="checkbox" id="chk-pdpa">
+          <label for="chk-pdpa">I am responsible for providing a valid mobile number, used only for scoring, leaderboard ranking and winner contact. It will never be publicly displayed and will be deleted within 30 days.</label>
+        </div>
         <div class="err" id="entry-err"></div>
       </div>
     </div>
@@ -253,38 +341,29 @@
 
   <!-- ── LEADERBOARD ───────────────────────────────────────────────── -->
   <div class="ov" id="ov-leaderboard" style="background:rgba(0,0,0,.6);">
-    <div id="leaderboard-card" style="position:relative;width:min(96%,560px);">
-      <img src="assets/ui/LEADERBOARD.png" style="width:100%;display:block;" alt="Leaderboard">
+    <div id="leaderboard-card" style="position:relative;width:calc(420px * var(--scale,1));">
+      <img src="assets/ui/NEW LEADER.png" style="width:100%;display:block;" alt="Leaderboard">
       <!-- scores injected here, centred in the blank parchment area of the image -->
-      <div id="leader-list" style="position:absolute;top:calc(36% + 10px * var(--scale,1));bottom:6%;left:16%;right:19%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
+      <div id="leader-list" style="position:absolute;top:28%;bottom:13%;left:15%;right:17%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
     <div id="leaderboard-btn-row" class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(20px * var(--scale,1));"></div>
   </div>
 
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
-  <!-- Image is normal flow again (NOT position:absolute) so it renders at its
-       own natural aspect ratio and correctly defines the card's height —
-       the previous version forced it to height:100% of a flex-content-driven
-       box, which squished/cropped it. Content overlays on top of the now-
-       correctly-sized image via top:44% (a real percentage of the image's
-       actual height again). The button row is a normal-flow sibling AFTER
-       the image, so it always renders below the full image regardless of
-       overlay content height — no overlap possible, by construction. -->
+  <!-- Image is normal flow (not position:absolute) so it defines the card's
+       height at its own aspect ratio. Button row is a sibling AFTER it, so
+       it always renders below regardless of overlay content height. -->
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div id="charm-card" style="position:relative;z-index:1;width:fit-content;">
-      <!-- image + overlay share their own wrapper so the overlay's bottom:0
-           resolves against just the image's height, not image+buttons combined
-           (charm-card's total height includes the button row below) -->
+    <!-- Width pinned to the image's own rendered width (not fit-content) so
+         the button row below has real slack to center against. 416/520
+         matches the shared 420×520 box every card overlay uses. -->
+    <div id="charm-card" style="position:relative;z-index:1;width:calc(416px * var(--scale,1));">
+      <!-- image + overlay share a wrapper so overlay's bottom:0 resolves against just the image -->
       <div style="position:relative;">
-        <img src="assets/ui/PP Screen.png" style="height:calc(640px * var(--scale,1));width:auto;display:block;margin:0 auto;" alt="Post &amp; Pose">
+        <img src="assets/ui/PP Screen.png" style="height:calc(520px * var(--scale,1));width:auto;display:block;margin:0 auto;" alt="Post &amp; Pose">
 
-        <!-- content overlay, positioned relative to the now-correctly-sized image.
-             Font sizes/gaps/padding here use calc(REFpx * var(--scale)) too — the
-             box itself (top:44%/bottom:0) already tracks the image correctly, but
-             fixed-px content inside it wouldn't shrink along with a small box on
-             extreme aspect ratios, overflowing past the card into the buttons below. -->
         <div style="position:absolute;top:44%;left:9%;right:9%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:calc(4px * var(--scale,1));overflow:hidden;">
           <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
             style="width:70%;text-align:center;padding:calc(6px * var(--scale,1)) calc(12px * var(--scale,1));border:2px solid #b8832a;border-radius:8px;font-size:calc(15px * var(--scale,1));font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
@@ -295,10 +374,12 @@
         </div>
       </div>
 
-      <!-- normal document flow, AFTER the image wrapper — always below it, never overlapping -->
-      <div class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(-4px * var(--scale,1));margin-bottom:calc(26px * var(--scale,1));">
-        <div id="btn-charm-home" class="img-btn"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
-        <div id="btn-post-charm" class="img-btn"><img src="assets/ui/POST.png" alt="Post"></div>
+      <!-- img-btn--h: BACK TO HOME.png and POST.png have different pill
+           aspect ratios, so sizing by height (not width) keeps both buttons
+           the same visual size. width:100% gives this row real centering slack. -->
+      <div class="img-btn-row" style="width:100%;--btn-h:calc(73px * var(--scale,1));margin-top:calc(-4px * var(--scale,1));margin-bottom:calc(26px * var(--scale,1));">
+        <div id="btn-charm-home" class="img-btn img-btn--h"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
+        <div id="btn-post-charm" class="img-btn img-btn--h"><img src="assets/ui/POST.png" alt="Post"></div>
       </div>
     </div>
   </div>
@@ -306,14 +387,45 @@
   <!-- ── FINISH (published confirmation) ───────────────────────────── -->
   <div class="ov" id="ov-finish">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
-    <div style="position:relative;z-index:1;width:min(100%,520px);">
+    <div style="position:relative;z-index:1;width:calc(416px * var(--scale,1));">
       <img src="assets/ui/FINISH.png" style="width:100%;display:block;" alt="Published">
       <!-- invisible zone over the CLOSED button drawn in the PNG -->
       <div id="btn-close-finish" style="position:absolute;bottom:10%;left:27%;right:27%;height:8%;cursor:pointer;border-radius:25px;"></div>
     </div>
   </div>
 
+  <!-- ── CONTEST ANNOUNCEMENT — gated by isContestActive(), before How To Play ── -->
+  <div class="ov" id="ov-contest">
+    <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
+    <div id="contest-card" style="position:relative;z-index:1;width:calc(347px * var(--scale,1));">
+      <img src="assets/ui/CONTEST.png" style="width:100%;display:block;" alt="Play and Win Contest">
+      <!-- invisible zone over the ✕ button drawn in the image (top-right) -->
+      <div id="btn-close-contest" style="position:absolute;top:31%;right:1%;width:12%;padding-bottom:9%;cursor:pointer;border-radius:50%;"></div>
+      <!-- T&C checkbox, overlaid in the blank parchment box drawn in the image -->
+      <div class="chk-row" id="contest-chk-row" style="position:absolute;top:62%;left:9%;right:9%;">
+        <input type="checkbox" id="chk-contest-tnc">
+        <label for="chk-contest-tnc">I have read and agree to the <a id="link-tnc">Play &amp; Win Contest Terms &amp; Conditions</a> and Privacy Notice. I confirm that I am eligible to participate and consent to the collection and use of my information for the administration of this Contest.</label>
+      </div>
+      <!-- hit zone over PROCEED, measured off CONTEST.png's actual pill+border bounds -->
+      <div id="btn-proceed-contest" style="position:absolute;bottom:5%;left:19%;right:19%;height:10%;cursor:pointer;border-radius:25px;"></div>
+      <!-- dimmed until the T&C checkbox above is ticked -->
+      <div class="btn-dim" id="proceed-dim" style="bottom:5%;left:19%;right:19%;height:10%;"></div>
+    </div>
+  </div>
+
 </div><!-- #game-wrap -->
+
+<!-- ── T&C MODAL (viewport-fixed so it isn't clipped by game-wrap) ──── -->
+<div class="modal-backdrop" id="modal-tnc">
+  <div id="tnc-card" style="position:relative;width:calc(347px * var(--scale,1));">
+    <img src="assets/ui/T_C.png" style="width:100%;display:block;" alt="Terms and Conditions">
+    <div class="modal-body" id="tnc-body" style="position:absolute;top:22%;bottom:17%;left:11%;right:7%;overflow-y:auto;"></div>
+    <!-- invisible zone over the ✕ button drawn in the image (top-right) -->
+    <div class="tnc-close-zone" style="position:absolute;top:8%;right:0%;width:14%;padding-bottom:9%;cursor:pointer;border-radius:50%;"></div>
+    <!-- invisible zone over the CLOSE button drawn in the image (bottom) -->
+    <div class="tnc-close-zone" style="position:absolute;bottom:4%;left:21%;right:23%;height:12%;cursor:pointer;border-radius:25px;"></div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -325,16 +437,17 @@ const GAME_DURATION = 60;     // seconds
 const MAX_LIVES     = 3;
 const FIRE_RATE_MS  = 220;    // minimum ms between shots
 
+// ── Contest window ───────────────────────────────────────────────────────────
+// Announcement/T&C screen shows from now through the Contest's end (not
+// gated to the 21 Aug start) as an early heads-up. UTC+8, no DST.
+const CONTEST_END = new Date('2026-09-05T23:00:00+08:00');
+function isContestActive(){
+  return new Date() <= CONTEST_END;
+}
+
 // ── Responsive fit (JS, not CSS) ────────────────────────────────────────────
-// The stylesheet also sets #game-wrap's width/height via CSS min() as a
-// baseline, but some mobile browsers/webviews don't support min() with
-// arithmetic inside it — when that happens the whole declaration is invalid
-// and gets dropped, leaving the box with NO defined size. Phaser then reads
-// an unconstrained parent and sizes its canvas off the full window instead
-// of the intended 480:845 shape, and the box balloons to match. Setting
-// explicit inline pixel width/height here always wins over the CSS (same
-// specificity, but inline + later in the cascade) and only needs plain JS
-// math, so it works everywhere regardless of what CSS features are supported.
+// Backs up the CSS min() sizing — some mobile browsers don't support min()
+// with arithmetic, which drops the whole rule and lets Phaser's canvas balloon.
 function fitGameWrap(){
   const wrap = document.getElementById('game-wrap');
   const vw = window.innerWidth, vh = window.innerHeight;
@@ -342,13 +455,7 @@ function fitGameWrap(){
   const h = w * 845 / 480;
   wrap.style.width  = w + 'px';
   wrap.style.height = h + 'px';
-  // Exposes how big game-wrap is relative to its 480-wide reference design,
-  // so fixed-px CSS values that can't be expressed as simple width/height
-  // percentages (font-size, gaps, etc.) can still track its actual size via
-  // calc(REFpx * var(--scale)) instead of drifting on aspect ratios far from
-  // game-wrap's own fixed 480:845 shape. Set on the root element, not
-  // game-wrap itself — custom properties don't inherit upward, and some
-  // rules that need it (e.g. --btn-w on :root) live outside game-wrap.
+  // --scale lets fixed-px CSS (calc(REFpx*var(--scale))) track game-wrap's real size.
   document.documentElement.style.setProperty('--scale', w / 480);
 }
 fitGameWrap();
@@ -430,14 +537,97 @@ function showOv(id){
   if(_activeOv) _activeOv.classList.add('on');
 }
 
+// ── Terms & Conditions (verbatim legal text for the T&C modal) ────────────────
+const TNC_TEXT = `PLAY & WIN CONTEST — TERMS AND CONDITIONS
+Organised by Unigons Global Pte. Ltd.
+
+By participating in the Play & Win Contest ("Contest"), each participant agrees to be bound by these Terms and Conditions.
+
+1. Contest Period
+The Contest will commence on 21 August 2026 at 7:00 PM (Singapore Time) and will end on 5 September 2026 at 11:00 PM (Singapore Time) ("Contest Period").
+Only scores successfully recorded during the Contest Period will be eligible for the Contest.
+
+2. Eligibility and Participation
+No purchase is necessary to participate in the Contest.
+The Contest is open to participants using a valid Singapore-registered WhatsApp mobile number.
+Participants may play the game as many times as they wish during the Contest Period.
+Each valid mobile number will be treated as a unique participant ID for the purposes of recording scores and determining leaderboard rankings.
+Participants under 12 years of age may participate only using the mobile number of their parent or legal guardian and with the consent and supervision of that parent or legal guardian. The parent or guardian will be deemed to have agreed to these Terms and Conditions on the child's behalf.
+Participants are responsible for ensuring that the mobile number and other information submitted are complete and accurate.
+
+3. Leaderboard and Winners
+At the end of the Contest Period, the three (3) participants with the highest valid scores on the final leaderboard will each win one (1) Limited-Edition Fortune Merlion.
+Scores and leaderboard positions are subject to verification by the Organiser.
+The Organiser reserves the right to disqualify any participant or score that it reasonably determines resulted from cheating, manipulation, exploitation of bugs or technical vulnerabilities, automated play, unauthorised software, submission of false information, or any other conduct that compromises the fairness or integrity of the Contest.
+In the event of a tie affecting the top three positions, the participant who first achieved the relevant final high score, based on the Organiser's system records, will rank higher.
+The Organiser's determination of the final leaderboard and winners shall be final, subject to applicable law. No correspondence regarding the determination of winners will be entertained.
+
+4. Announcement and Notification of Winners
+Contest results will be published on Unigonsplay.com.
+Winners will also be contacted using the WhatsApp mobile number submitted for participation.
+Participants are responsible for providing a correct and accessible mobile number. The Organiser will not be responsible where a winner cannot be contacted because an incorrect, invalid or inaccessible number was submitted.
+If a winner cannot be contacted within a reasonable period determined by the Organiser, fails to respond to the prize notification, is found to be ineligible, or fails to collect the prize by the stated deadline, the Organiser may award the prize to the participant with the next highest valid score.
+
+5. Prize Collection
+Each winner will receive: One (1) Limited-Edition Fortune Merlion
+Prizes must be collected from: CoPlay, Level 3, Plaza Singapura, Singapore
+All prizes must be redeemed and collected no later than 30 September 2026.
+Any prize not collected by this date may be forfeited and offered to the participant with the next highest valid score.
+The Organiser may require winners to provide reasonable proof of identity and/or proof of ownership or authorised use of the registered mobile number before releasing a prize.
+
+6. Prize Conditions
+Prizes are not transferable and cannot be exchanged for cash, credit, or any other product or item.
+No cash alternative will be offered.
+Winners should inspect their prize at the time of collection. Once a prize has been accepted and collected, the Organiser will not provide an exchange solely for damage or defects discovered after collection, except to the extent otherwise required by applicable law.
+The Organiser reserves the right, where reasonably necessary due to circumstances beyond its control, to substitute a prize with another prize of comparable value.
+
+7. Winner Photography and Publicity
+As part of prize collection, winners may be requested to participate in a reasonable prize presentation and photography session.
+Subject to the winner's consent and applicable law, photographs and/or recordings from the prize presentation may be published on Unigonsplay.com and Uniplay's Instagram account for the purpose of announcing and promoting the Contest and its winners.
+Where a winner is a minor, the consent of the winner's parent or legal guardian must be obtained before identifiable photographs or recordings of the minor are published.
+
+8. Personal Data
+By entering the Contest, participants acknowledge that the Organiser may collect, use and process information submitted in connection with the Contest, including their mobile number, game scores and other information reasonably required to administer the Contest.
+Such information may be used for purposes including: identifying individual participants and maintaining the leaderboard; verifying scores and eligibility; administering the Contest; contacting and verifying winners; arranging prize collection; preventing fraud, cheating or misuse of the game; and complying with applicable legal and regulatory requirements.
+Personal data will be handled in accordance with applicable Singapore data protection laws and the Organiser's applicable privacy policy.
+Participation in the Contest does not, by itself, constitute consent to receive unrelated marketing communications.
+
+9. Technical Issues and Fair Play
+The Organiser will take reasonable steps to operate the Contest fairly but does not guarantee uninterrupted or error-free access to the game.
+To the extent permitted by applicable law, the Organiser will not be responsible for entries or scores that are lost, delayed or not properly recorded because of internet connectivity, device failure, telecommunications issues, system outages or other technical circumstances outside its reasonable control.
+If a technical error, security incident or other event materially affects the integrity or fair operation of the Contest, the Organiser reserves the right to take reasonable corrective action, including invalidating affected scores, suspending the Contest or modifying the Contest where necessary.
+
+10. Liability
+Participation in the game and Contest is voluntary and at the participant's own risk.
+To the fullest extent permitted by applicable law, Unigons Global Pte. Ltd., its organisers, partners, employees and agents will not be liable for any indirect, incidental or consequential loss or damage arising from participation in the Contest, use of the game, acceptance or use of a prize, or attendance at a prize collection or related event.
+Nothing in these Terms and Conditions is intended to exclude or limit any liability that cannot lawfully be excluded or limited under applicable law, including liability where exclusion is prohibited by law.
+
+11. Game Availability After the Contest
+The prize competition and leaderboard contest will officially end on 5 September 2026 at 11:00 PM (Singapore Time).
+The game may remain available to play after the Contest Period. However: no prizes will be awarded for gameplay or scores achieved after the Contest Period; post-Contest scores will not qualify for the Contest leaderboard; and players will not be required to submit their mobile number for leaderboard participation after the Contest has ended.
+Continued availability of the game after the Contest does not constitute an extension or renewal of the Contest.
+
+12. General
+The Organiser reserves the right to verify participants and scores and to disqualify participation that breaches these Terms and Conditions or compromises the integrity of the Contest.
+If circumstances outside the Organiser's reasonable control prevent the Contest from operating as intended, the Organiser may reasonably suspend, modify or terminate the Contest, subject to applicable law.
+If any provision of these Terms and Conditions is found to be invalid or unenforceable, the remaining provisions will continue to apply.
+These Terms and Conditions shall be governed by the laws of Singapore, and participants submit to the jurisdiction of the courts of Singapore.
+
+Organiser: Unigons Global Pte. Ltd.
+Contest Period: 21 August 2026, 7:00 PM to 5 September 2026, 11:00 PM (Singapore Time)
+Prize Collection Deadline: 30 September 2026
+
+By selecting "I Agree", proceeding to submit a mobile number for Contest participation, or otherwise entering the Contest, the participant confirms that they have read, understood and agreed to these Terms and Conditions.`;
+
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const MOCK_LEADERS = [
   { name:'Aisha', score:580 }, { name:'Bryan', score:420 },
   { name:'Celine', score:310 }, { name:'Darren', score:280 }, { name:'Evelyn', score:150 },
 ];
-function ordinal(n){
+function ordinalHtml(n){
   const s = ['th','st','nd','rd'], v = n % 100;
-  return n + (s[(v-20)%10] || s[v] || s[0]);
+  const suffix = s[(v-20)%10] || s[v] || s[0];
+  return `${n}<sup>${suffix}</sup>`;
 }
 function truncName(s){ return s.length > 8 ? s.slice(0,8) + '…' : s; }
 
@@ -446,7 +636,7 @@ const ROW = (rank, name, sc, pink=false) => {
   const f = "'Arial Rounded MT Bold',Arial,sans-serif";
   const fs = 'font-size:calc(19px * var(--scale,1));font-weight:900;';
   return `<div style="display:flex;align-items:baseline;width:100%;max-width:100%;box-sizing:border-box;padding-left:calc(10px * var(--scale,1));overflow:hidden;">
-    <span style="${fs}color:${c};font-family:${f};flex-shrink:0;width:calc(52px * var(--scale,1));">${ordinal(rank)}</span>
+    <span style="${fs}color:${c};font-family:${f};flex-shrink:0;width:calc(52px * var(--scale,1));">${ordinalHtml(rank)}</span>
     <span style="${fs}color:${c};font-family:${f};flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(truncName(name))}</span>
     <span style="${fs}color:#e91e8c;font-family:${f};flex-shrink:0;padding-left:calc(5px * var(--scale,1));">${sc}</span>
   </div>`;
@@ -473,7 +663,7 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
   const card = document.getElementById('leaderboard-card');
   card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
   const listEl = document.getElementById('leader-list');
-  listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(13px * var(--scale,1));">Loading…</div>`;
+  listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(13px * var(--scale,1));margin-top:calc(24px * var(--scale,1));">Loading…</div>`;
 
   const btnRow = document.getElementById('leaderboard-btn-row');
   btnRow.innerHTML = '';
@@ -491,7 +681,7 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
       : await fetch(SERVER_URL + '/leaderboard').then(r => r.json());
     const top = rows.slice(0, 5);
     if(top.length === 0){
-      listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-size:calc(13px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;">No scores yet — be the first!</div>`;
+      listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-size:calc(13px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;margin-top:calc(24px * var(--scale,1));">No scores yet — be the first!</div>`;
       return;
     }
     // Only highlight a top-5 row when this attempt IS the player's stored best —
@@ -505,7 +695,7 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
     }
     listEl.innerHTML = html;
   } catch(e){
-    listEl.innerHTML = `<div style="text-align:center;color:#c0392b;font-size:calc(13px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;">Could not load scores.</div>`;
+    listEl.innerHTML = `<div style="text-align:center;color:#c0392b;font-size:calc(13px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;margin-top:calc(24px * var(--scale,1));">Could not load scores.</div>`;
   }
 }
 
@@ -524,12 +714,12 @@ function apiPost(path, body){
 let score = 0, lives = MAX_LIVES, timer = GAME_DURATION;
 let gameSceneRef = null;
 let submittedName = '';
+// True once agreed to Contest T&C this session — lets "Play Again" skip
+// straight back to How To Play instead of re-showing the gate every replay.
+let hasAgreedToTerms = false;
 
 // ── Charm broadcast ETA ─────────────────────────────────────────────────────
-// There's no real charm-queue-depth endpoint on the backend yet (display.html /
-// the broadcast display don't exist in this repo), so per the debrief's
-// "simpler interim measure" we approximate queue depth from the existing
-// player-count socket event (total scores submitted) as a rough proxy.
+// No real queue-depth endpoint exists yet, so approximate from player-count.
 let latestPlayerCount = 0;
 if(!MOCK && typeof io !== 'undefined'){
   try{
@@ -593,6 +783,30 @@ function showCharm(){
   showOv('ov-charm');
   const card = document.getElementById('charm-card');
   card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
+}
+
+// ── How To Play / Contest gate ─────────────────────────────────────────────────
+function showTutorial(){
+  showOv('ov-tutorial');
+  const card = document.getElementById('tutorial-card');
+  card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
+}
+
+function showContestScreen(){
+  document.getElementById('chk-contest-tnc').checked = false;
+  document.getElementById('proceed-dim').style.display = 'block';
+  showOv('ov-contest');
+  const card = document.getElementById('contest-card');
+  card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
+}
+
+// Entry point for both Play and Play Again — shows the Contest gate first if active and not yet agreed.
+function goToHowToPlay(){
+  if(isContestActive() && !hasAgreedToTerms){
+    showContestScreen();
+  } else {
+    showTutorial();
+  }
 }
 
 function updateHUD(){
@@ -689,14 +903,17 @@ class GameScene extends Phaser.Scene {
 
   create(){
     gameSceneRef = this;
-    // Trophy/leaderboard icon fades in first, then PLAY follows ~350ms later
+    // Trophy fades in first, then PLAY and Visit Shop pop in together ~350ms later.
     const lbBtn = document.getElementById('btn-leaderboard-title');
     lbBtn.style.visibility = 'visible';
     lbBtn.classList.add('pop-in');
     const wrap = document.getElementById('play-btn-wrap');
+    const shopBtn = document.getElementById('btn-visit-shop');
     setTimeout(() => {
       wrap.style.visibility = 'visible';
       wrap.classList.add('pop-in');
+      shopBtn.style.visibility = 'visible';
+      shopBtn.classList.add('pop-in-centered');
     }, 350);
     this.state = 'idle';
     this._lastShot = 0;
@@ -761,6 +978,7 @@ class GameScene extends Phaser.Scene {
 
     document.getElementById('hud').classList.add('on');
     document.getElementById('btn-fire-wrap').classList.add('on');
+    document.getElementById('btn-exit-game').classList.add('on');
     this._resetEntities();
 
     // bgm is already playing continuously since the Home screen (or since
@@ -911,12 +1129,26 @@ class GameScene extends Phaser.Scene {
     this._resetEntities();
     document.getElementById('hud').classList.remove('on');
     document.getElementById('btn-fire-wrap').classList.remove('on');
+    document.getElementById('btn-exit-game').classList.remove('on');
     document.getElementById('final-score').textContent = score;
     this.tweens.add({
       targets:this.bgm, volume:0, duration:600,
       onComplete: () => this.bgm.stop(),
     });
     showOv('ov-scoreboard');
+  }
+
+  // Called via the quit-confirm dialog — skips the scoreboard, leaves bgm playing.
+  exitToHome(){
+    if(this.state !== 'playing') return;
+    this.state = 'idle';
+    if(this._timerEvt) { this._timerEvt.remove(); this._timerEvt = null; }
+    this.time.removeAllEvents();
+    this._resetEntities();
+    document.getElementById('hud').classList.remove('on');
+    document.getElementById('btn-fire-wrap').classList.remove('on');
+    document.getElementById('btn-exit-game').classList.remove('on');
+    showOv('ov-title');
   }
 
   // ── Utilities ──────────────────────────────────────────────────────────────
@@ -1022,11 +1254,7 @@ document.addEventListener('touchend', unlockAudio, { once:true });
 
 // ── DOM button wiring ─────────────────────────────────────────────────────────
 document.getElementById('btn-play').addEventListener('click', () => {
-  showOv('ov-tutorial');
-  const card = document.getElementById('tutorial-card');
-  card.classList.remove('pop-in');
-  void card.offsetWidth;
-  card.classList.add('pop-in');
+  goToHowToPlay();
 });
 
 document.getElementById('btn-close-tutorial').addEventListener('click', () => {
@@ -1041,20 +1269,31 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
 
 document.getElementById('btn-play-again').addEventListener('click', () => {
   // Game-over faded bgm out and stopped it — restart it right away so it's
-  // already playing through the tutorial screen, not just once Start Game
-  // is pressed.
+  // already playing through the tutorial (or contest) screen, not just once
+  // Start Game is pressed.
   gameSceneRef?._ensureBgmPlaying();
-  showOv('ov-tutorial');
-  const card = document.getElementById('tutorial-card');
-  card.classList.remove('pop-in');
-  void card.offsetWidth;
-  card.classList.add('pop-in');
+  goToHowToPlay();
 });
+
+// Dims until valid but stays clickable — pointer-events:none would block
+// the on-click error messages and the backend's profanity check on submit.
+function updateSubmitState(){
+  const name  = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const agreed = document.getElementById('chk-pdpa').checked;
+  const valid = name.length >= 1 && name.length <= 20 && /^[89]\d{7}$/.test(phone) && agreed;
+  document.getElementById('btn-submit').style.opacity = valid ? '1' : '.45';
+}
+document.getElementById('inp-name').addEventListener('input', updateSubmitState);
+document.getElementById('inp-phone').addEventListener('input', updateSubmitState);
+document.getElementById('chk-pdpa').addEventListener('change', updateSubmitState);
 
 document.getElementById('btn-submit-score').addEventListener('click', () => {
   document.getElementById('inp-name').value  = '';
   document.getElementById('inp-phone').value = '';
+  document.getElementById('chk-pdpa').checked = false;
   document.getElementById('entry-err').textContent = '';
+  updateSubmitState();
   showOv('ov-entry');
   const card = document.getElementById('entry-card');
   card.classList.remove('pop-in');
@@ -1077,6 +1316,9 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   }
   if(!/^[89]\d{7}$/.test(phone)){
     errEl.textContent = 'Mobile must be 8 digits starting with 8 or 9.'; return;
+  }
+  if(!document.getElementById('chk-pdpa').checked){
+    errEl.textContent = 'Please check the box to be eligible to participate.'; return;
   }
 
   const wrap = document.getElementById('btn-submit');
@@ -1140,6 +1382,72 @@ document.getElementById('btn-post-charm').addEventListener('click', async () => 
 document.getElementById('btn-close-finish').addEventListener('click', () => {
   gameSceneRef?._ensureBgmPlaying();
   showOv('ov-title');
+});
+
+// ── Contest announcement + T&C gate ─────────────────────────────────────────
+document.getElementById('btn-close-contest').addEventListener('click', () => {
+  gameSceneRef?._ensureBgmPlaying();
+  showOv('ov-title');
+});
+
+document.getElementById('chk-contest-tnc').addEventListener('change', (e) => {
+  document.getElementById('proceed-dim').style.display = e.target.checked ? 'none' : 'block';
+});
+
+document.getElementById('btn-proceed-contest').addEventListener('click', () => {
+  if(!document.getElementById('chk-contest-tnc').checked){
+    const row = document.getElementById('contest-chk-row');
+    row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+    return;
+  }
+  hasAgreedToTerms = true;
+  showTutorial();
+});
+
+document.getElementById('link-tnc').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('modal-tnc').classList.add('on');
+});
+
+document.querySelectorAll('.tnc-close-zone').forEach(zone => {
+  zone.addEventListener('click', () => {
+    document.getElementById('modal-tnc').classList.remove('on');
+  });
+});
+
+document.getElementById('tnc-body').textContent = TNC_TEXT;
+
+// ── Sound-on prompt (Home screen) ───────────────────────────────────────────
+// Fades out on first tap, or automatically after a few seconds — a static
+// always-visible banner would clutter the Home screen indefinitely.
+(() => {
+  const el = document.getElementById('sound-prompt');
+  let dismissed = false;
+  const dismiss = () => {
+    if(dismissed) return;
+    dismissed = true;
+    el.classList.add('fade-out');
+  };
+  el.addEventListener('click', dismiss);
+  setTimeout(dismiss, 6000);
+})();
+
+// ── In-game exit button ──────────────────────────────────────────────────────
+// Pauses the Scene (Phaser's scene.pause() freezes physics/spawning/clock) and confirms first.
+document.getElementById('btn-exit-game').addEventListener('click', () => {
+  if(!gameSceneRef || gameSceneRef.state !== 'playing') return;
+  gameSceneRef.scene.pause();
+  showOv('ov-quit-confirm');
+});
+
+document.getElementById('btn-quit-resume').addEventListener('click', () => {
+  showOv(null);
+  gameSceneRef?.scene.resume();
+});
+
+document.getElementById('btn-quit-confirm').addEventListener('click', () => {
+  gameSceneRef?.scene.resume();
+  gameSceneRef?.exitToHome();
 });
 </script>
 </body>

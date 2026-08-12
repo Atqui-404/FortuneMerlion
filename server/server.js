@@ -69,6 +69,17 @@ function stripHtml(s) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' }[c])
   );
 }
+
+function titleCase(s) {
+  return String(s).replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+}
+
+const { Filter } = require('bad-words');
+const profanityFilter = new Filter();
+function containsProfanity(s) {
+  try { return profanityFilter.isProfane(String(s)); }
+  catch { return false; } // fail open on filter errors — never block a legit name because the library choked
+}
  
 // ─── Rate limiters ─────────────────────────────────────────────────────────
 const limiter10 = rateLimit({
@@ -88,7 +99,10 @@ app.post('/score', limiter10, (req, res) => {
   if (typeof score !== 'number' || !Number.isInteger(score) || score < 0 || score > 2000)
     return res.status(400).json({ error: 'Invalid score' });
  
-  const cleanName = stripHtml(name.trim());
+  if (containsProfanity(name))
+    return res.status(400).json({ error: 'Please choose a different name.' });
+
+  const cleanName = titleCase(stripHtml(name.trim()));
 
   // Log every valid attempt unconditionally (analytics — never deduped, never shown publicly)
   db.prepare('INSERT INTO plays (name, phone, score) VALUES (?, ?, ?)').run(cleanName, phone, score);
@@ -138,7 +152,10 @@ app.post('/charm', limiter10, (req, res) => {
   if (!charm || !VALID_CHARMS.has(charm))
     return res.status(400).json({ error: 'Invalid charm' });
  
-  const firstName = stripHtml(name.trim().split(/\s+/)[0]);
+  if (containsProfanity(name))
+    return res.status(400).json({ error: 'Please choose a different name.' });
+
+  const firstName = titleCase(stripHtml(name.trim().split(/\s+/)[0]));
   io.emit('new-charm', { name: firstName, charm });
  
   res.json({ ok: true });
