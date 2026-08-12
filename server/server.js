@@ -74,11 +74,160 @@ function titleCase(s) {
   return String(s).replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 }
 
-const { Filter } = require('bad-words');
-const profanityFilter = new Filter();
+// ─── Name moderation ────────────────────────────────────────────────────────
+// Curated from "Leaderboard Display Name Moderation Starter List v1.0" —
+// BLOCK-tier terms (general profanity, explicit sexual content, sexual abuse
+// terms, hate slurs, threats/self-harm phrases, extremist slogans) plus
+// RESERVE-tier (staff/admin impersonation) and spam/solicitation terms.
+// REVIEW-tier terms (single violence words, drug references, identity terms,
+// mild insults) are deliberately NOT blocked here — the source doc itself
+// says these need contextual review, not automatic rejection, and blocking
+// them outright would reject legitimate names (the doc explicitly calls out
+// "Black", "gay", "Muslim", "trans" etc. as neutral identity words that must
+// not be auto-blocked).
+const BLOCK_WORDS = [
+  // 3.1 general profanity and vulgar insults
+  'arse','arsehole','ass','assbag','assface','asshat','asshole','asswipe',
+  'bastard','bellend','bitch','bitchass','bitchface','bollocks','bullshit',
+  'cocksucker','cunt','dick','dickbag','dickface','dickhead','douche',
+  'douchebag','fuck','fucker','fuckface','fuckhead','fucking','fuckwit',
+  'goddamn','horseshit','jackass','knob','knobhead','motherfucker',
+  'motherfucking','numbnuts','pisshead','prick','scumbag','shit','shitbag',
+  'shitface','shithead','shitty','tosser','twat','wanker','whore',
+  // 3.2 explicit sexual / pornographic terms
+  'anal','analingus','anus','bdsm','blowjob','boner','boob','boobs',
+  'bukkake','camgirl','cock','cocks','cum','cumshot','cunnilingus',
+  'cybersex','deepthroat','dildo','doggystyle','ejaculate','ejaculation',
+  'erotic','escort','fetish','fingering','gangbang','handjob','hardcore',
+  'hentai','hooker','horny','intercourse','jerkoff','jizz','masturbate',
+  'masturbation','milf','nudes','nudity','onlyfans','orgasm','orgy','penis',
+  'porn','porno','pornography','pussy','rimjob','semen','sexcam','sexting',
+  'sperm','stripper','testicle','testicles','tits','titties','titty',
+  'vagina','vibrator','voyeur','xxx',
+  // 3.3 sexual exploitation / severe abuse
+  'bestiality','groomer','incest','loli','lolicon','molest','molester',
+  'necrophilia','nonconsensual','paedo','paedophile','pedo','pedophile',
+  'rape','rapist','zoophile','zoophilia',
+  // 3.4 hate slurs and discriminatory abuse
+  'beaner','bulldyke','chinaman','chink','coon','coonass','cracker',
+  'cripple','dago','darkie','dyke','fag','faggot','faggots','faggy','gook',
+  'gypo','gyppo','hebe','homo','honky','hymie','injun','jap','jewboy',
+  'kaffir','kike','kraut','lesbo','mick','mongoloid','mudshark','muzzie',
+  'nigga','niggas','nigger','niggers','paki','pikey','polack','poof',
+  'poofter','raghead','redskin','retard','retarded','shemale','sodomite',
+  'spastic','spaz','spic','squaw','towelhead','tranny','wetback','whitey',
+  'wog','wop','zipperhead',
+  // 3.5 explicit threats / self-harm (single tokens; phrase forms handled separately)
+  'dox','doxx','doxxing','kys',
+  // 3.6 extremist slogans / orgs
+  '1488','kkk','nazi',
+  // 5.1 reserved staff/system names — impersonation risk
+  'admin','administrator','moderator','gamemaster','helpdesk','official',
+  'support','staff','system','verified','verification',
+  // 5.2 spam / solicitation
+  'onlyfans','paypal','venmo','cashapp','telegram','whatsapp','discord',
+  // 4.4 mild insults / crude language — doc recommends BLOCK (not just
+  // REVIEW) "for younger audiences or family-safe leaderboards", which this is
+  'bimbo','bloody','bozo','brat','bugger','clown','crap','creep','cuck',
+  'cuckold','damn','dumb','dummy','freak','freaking','frick','git','hell',
+  'hoe','idiot','jerk','lame','loser','moron','noob','piss','pissed','poop',
+  'psycho','scum','skank','stupid','suck','thot','tramp','trash','ugly',
+];
+
+// Multi-word phrases — checked as substrings post-normalization since they're
+// specific enough not to false-positive the way single short tokens can.
+const BLOCK_PHRASES = [
+  'fuck off','son of a bitch','suck my dick','burn in hell','cut myself',
+  'go die','go kill yourself','hang yourself','i will kill you',
+  "i'll kill you",'kill yourself','mass shooter','school shooter',
+  'self harm','self-harm','unalive yourself','wanna die','want to die',
+  'heil hitler','white power','white supremacist','white supremacy',
+  'buy account','sell account','free coins','free gems','free skins',
+  'gift card','cheap coins','discount code','promo code','link in bio',
+];
+
+// Explicit allowlist — legitimate words/names that contain a blocked
+// substring but must never be rejected (from the source doc's own
+// false-positive warning list). Checked BEFORE the blocklist; if the
+// normalized name exactly matches one of these, it's allowed outright.
+const ALLOWLIST = [
+  'accumulate','analysis','analytics','arsenal','assistance','assistant',
+  'bass','canal','class','classic','cockburn','cockpit','cocktail',
+  'compass','cucumber','cumulative','dick','dickens','dickinson','document',
+  'embassy','essex','fagin','gaylord','grape','grapefruit','grass','hello',
+  'massive','middlesex','niger','nigeria','pakistan','pakistani','passage',
+  'passion','peacock','penistone','rapeseed','scrape','scunthorpe','shell',
+  'shelley','shiitake','skill','skilled','sussex','therapist','title',
+  'titus',
+  // Common Singapore/Malay/Muslim names colliding with the "ass" root —
+  // not in the source doc's own list (which is English-context general
+  // purpose), added because this event is in Singapore and these are real,
+  // likely-to-occur names, not hypothetical. Treat this section as a living
+  // list — extend it if a real attendee's name gets wrongly rejected during
+  // the event (the doc's own guidance: provide a rename/appeal path and
+  // review the list using real rejection data, not just set-and-forget).
+  'hassan','hassim','kassim','bassam','bassim','wassim','yassin','nassir',
+  'cassandra',
+];
+
+function normalizeForModeration(s) {
+  let n = String(s).toLowerCase().normalize('NFKC');
+  n = n.replace(/[\u200B-\u200D\uFEFF]/g, ''); // zero-width chars
+  const subs = { '4':'a','3':'e','1':'i','!':'i','0':'o','5':'s','$':'s','7':'t','+':'t' };
+  n = n.replace(/[43105!$+]/g, c => subs[c] || c); // common leetspeak substitutions
+  return n;
+}
+
+function collapseRepeats(s) {
+  // shiiit -> shit, fuuuck -> fuck: collapse any run of 3+ identical
+  // letters down to 1, per the doc's "repeats" normalization guidance
+  return s.replace(/([a-z])\1{2,}/g, '$1');
+}
+
 function containsProfanity(s) {
-  try { return profanityFilter.isProfane(String(s)); }
-  catch { return false; } // fail open on filter errors — never block a legit name because the library choked
+  const normalized = normalizeForModeration(s);
+  const trimmed = normalized.trim();
+
+  // Exact allowlist match on the whole name — e.g. name is literally "Hello"
+  if (ALLOWLIST.includes(trimmed)) return false;
+
+  // Pass 1: whole-word matching (word-boundary aware, so "assistant" or
+  // "classic" never match "ass")
+  const words = normalized.split(/[^a-z0-9]+/).filter(Boolean);
+  if (words.some(w => BLOCK_WORDS.includes(w))) return true;
+
+  // Pass 2: phrase matching — substring is fine here, multi-word phrases
+  // are specific enough not to false-positive
+  if (BLOCK_PHRASES.some(p => normalized.includes(p))) return true;
+
+  // Pass 3: compact form (separators removed) catches spaced-out evasion
+  // like "f.u.c.k" or "f_u_c_k", which pass 1's tokenizer would otherwise
+  // split into harmless single letters
+  const compact = normalized.replace(/[^a-z0-9]/g, '');
+  if (BLOCK_WORDS.some(w => compact.includes(w))) {
+    // still respect the allowlist for compact-form matches, checking each
+    // allowlist word's own compact form
+    const compactAllowlist = ALLOWLIST.map(a => a.replace(/[^a-z0-9]/g, ''));
+    if (!compactAllowlist.some(a => compact === a)) return true;
+  }
+
+  // Pass 4: repeat-collapsed form catches "shiiit" / "fuuuck" style evasion
+  const collapsed = collapseRepeats(compact);
+  if (collapsed !== compact && BLOCK_WORDS.some(w => collapsed.includes(w))) {
+    return true;
+  }
+
+  // Pass 5: substring matching on the compact form, catching compound
+  // insults not individually pre-listed (e.g. "Assbob") — allowlist above
+  // already covers the known legitimate words that would otherwise trip
+  // this on short roots like "ass"/"sex"/"hell"
+  if (BLOCK_WORDS.some(w => w.length >= 3 && compact.includes(w))) {
+    const compactAllowlist = ALLOWLIST.map(a => a.replace(/[^a-z0-9]/g, ''));
+    if (compactAllowlist.some(a => compact === a)) return false;
+    return true;
+  }
+
+  return false;
 }
  
 // ─── Rate limiters ─────────────────────────────────────────────────────────
@@ -100,7 +249,7 @@ app.post('/score', limiter10, (req, res) => {
     return res.status(400).json({ error: 'Invalid score' });
  
   if (containsProfanity(name))
-    return res.status(400).json({ error: 'Please choose a different name.' });
+    return res.status(400).json({ error: 'That name isn\'t allowed — please choose a different one.' });
 
   const cleanName = titleCase(stripHtml(name.trim()));
 
@@ -128,7 +277,7 @@ app.post('/score', limiter10, (req, res) => {
   const count = db.prepare('SELECT COUNT(*) AS cnt FROM scores').get().cnt;
   io.emit('player-count', count);
 
-  res.json({ ok: true, rank, score, isNewBest, name: cleanName });
+  res.json({ ok: true, rank, score, isNewBest });
   } catch(err) {
     console.error('POST /score error:', err.message);
     res.status(500).json({ error: 'Server error — please try again.' });
@@ -153,7 +302,7 @@ app.post('/charm', limiter10, (req, res) => {
     return res.status(400).json({ error: 'Invalid charm' });
  
   if (containsProfanity(name))
-    return res.status(400).json({ error: 'Please choose a different name.' });
+    return res.status(400).json({ error: 'That name isn\'t allowed — please choose a different one.' });
 
   const firstName = titleCase(stripHtml(name.trim().split(/\s+/)[0]));
   io.emit('new-charm', { name: firstName, charm });

@@ -65,7 +65,7 @@
     }
 
     /* ── Fire button ─────────────────────────────────────────────── */
-    /* left:47% matches mX (merlion's shot-origin) — merlion isn't centered in GAME.jpg */
+    /* left:47% matches mX (merlion's shot-origin) — merlion isn't centered in GAME.png */
     #btn-fire-wrap{
       position:absolute;left:47%;bottom:calc(34px * var(--scale,1));
       transform:translateX(-50%);
@@ -179,6 +179,9 @@
       font-family:'Arial Rounded MT Bold',Arial,sans-serif; cursor:pointer;
     }
     .chk-row a{ color:#0a5fc0; text-decoration:underline; cursor:pointer; }
+    /* Avoids a widowed last word; the &nbsp; in the label text itself
+       covers browsers that don't support text-wrap yet. */
+    label[for="chk-pdpa"]{ text-wrap: pretty; }
     @keyframes shake{
       10%,90%{ transform:translateX(-2px); }
       20%,80%{ transform:translateX(4px); }
@@ -199,9 +202,24 @@
        clear of the scrollbar, which sits closer to the frame edge. */
     .modal-body{
       font-size:calc(10px * var(--scale,1)); line-height:1.5; color:#3a2000;
-      font-family:Arial,sans-serif; white-space:pre-wrap;
+      font-family:Arial,sans-serif;
       padding-right:calc(20px * var(--scale,1));
     }
+    .modal-body p{ margin:0 0 calc(8px * var(--scale,1)); }
+    .modal-body .tc-title{
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif;
+      font-size:calc(13px * var(--scale,1)); font-weight:900; color:#6b3c10;
+      line-height:1.3; margin:0 0 calc(8px * var(--scale,1));
+    }
+    .modal-body .tc-org{ margin-bottom:calc(10px * var(--scale,1)); }
+    .modal-body h3{
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif;
+      font-size:calc(11px * var(--scale,1)); font-weight:900; color:#6b3c10;
+      margin:calc(14px * var(--scale,1)) 0 calc(4px * var(--scale,1));
+    }
+    .modal-body ul{ margin:0 0 calc(8px * var(--scale,1)); padding-left:calc(18px * var(--scale,1)); }
+    .modal-body li{ margin-bottom:calc(4px * var(--scale,1)); }
+    .modal-body .tc-footer{ margin-top:calc(12px * var(--scale,1)); }
 
     /* ── Sound-on prompt (Home screen) ──────────────────────────────── */
     #sound-prompt{
@@ -267,17 +285,22 @@
       <div id="btn-play" style="position:absolute;top:33%;left:10%;right:10%;height:27%;cursor:pointer;border-radius:30px;"></div>
     </div>
     <div id="btn-leaderboard-title" style="position:absolute;top:1.89%;right:3.33%;width:10%;height:5.68%;background:rgba(0,0,0,.45);border:2px solid rgba(255,226,52,.7);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:calc(24px * var(--scale,1));visibility:hidden;">🏆</div>
+    <!-- Right below the trophy. GAME LOGO.png has ~17% transparent padding at
+         its own top, so its real visual content doesn't start until ~22% down
+         — well below this icon's bottom edge here, despite the box itself
+         starting at top:12.44%. -->
+    <!-- Bigger than the trophy on purpose. The gray circle is inset ~10.5%
+         on each side to match the gold ring's own extent within shop.PNG's
+         canvas (ring spans ~11-89% of the image), not the full container. -->
+    <a id="btn-shop-title" href="https://www.unigonsplay.com" target="_blank" rel="noopener"
+      style="position:absolute;top:8.2%;right:2.50%;width:12%;height:6.82%;display:block;visibility:hidden;">
+      <div style="position:absolute;top:10.5%;left:10.5%;right:10.5%;bottom:10.5%;background:rgba(60,60,60,.55);border-radius:50%;"></div>
+      <img src="assets/ui/shop.PNG" style="position:relative;width:100%;height:100%;display:block;pointer-events:none;" alt="Shop">
+    </a>
     <!-- Top band, above GAME LOGO and clear of the trophy icon at its capped width. -->
     <div id="sound-prompt">
       <img src="assets/ui/SOUND.png" alt="Turn on your phone's sound for a better gameplay experience">
     </div>
-    <!-- Visit Shop sits just below the PLAY button — kept small so it
-    doesn't cover the little fountain-merlion artwork at the very
-    bottom of the Home background. -->
-    <a id="btn-visit-shop" href="https://www.unigonsplay.com" target="_blank" rel="noopener"
-      style="position:absolute;left:50%;top:80%;transform:translateX(-50%);width:28%;max-width:130px;display:block;visibility:hidden;">
-      <img src="assets/ui/VISIT SHOP.png" style="width:100%;display:block;pointer-events:none;" alt="Visit Shop">
-    </a>
   </div>
 
   <!-- ── HOW TO PLAY ─────────────────────────────────────────────── -->
@@ -328,7 +351,7 @@
         </div>
         <div class="chk-row">
           <input type="checkbox" id="chk-pdpa">
-          <label for="chk-pdpa">I am responsible for providing a valid mobile number, used only for scoring, leaderboard ranking and winner contact. It will never be publicly displayed and will be deleted within 30 days.</label>
+          <label for="chk-pdpa">I am responsible for providing a valid mobile number, used only for scoring, leaderboard ranking and winner contact. It will never be publicly displayed and will be deleted within 30&nbsp;days.</label>
         </div>
         <div class="err" id="entry-err"></div>
       </div>
@@ -357,22 +380,25 @@
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
     <!-- Width pinned to the image's own rendered width (not fit-content) so
-         the button row below has real slack to center against. 448/560 is
-         taller than the shared 420×520 box other cards use — verified the
-         charm-grid (2 rows @ 80px + gaps) + name input + label + error +
-         disclaimer need ~264px, and 520's 291px available was too tight in
-         practice (content spilled past the parchment); 560 gives ~314px
-         available, ~50px of real margin. -->
-    <div id="charm-card" style="position:relative;z-index:1;width:calc(448px * var(--scale,1));">
+         the button row below has real slack to center against.
+         top:44%/bottom:0 on the content overlay was wrong — measured
+         directly off PP Screen.png, the real blank parchment area runs
+         43%-88% of the image height; the bottom ~12% is the decorative
+         wood-frame border, which was being treated as usable space when it
+         never was. Corrected to top:43%/bottom:12%, which leaves LESS
+         usable height (45% vs the old assumed 56%), so the image also
+         grows 560→680px to give that corrected area enough real pixels
+         (~306px at scale=1, vs content's ~240px need — genuine margin). -->
+    <div id="charm-card" style="position:relative;z-index:1;width:calc(544px * var(--scale,1));">
       <!-- image + overlay share a wrapper so overlay's bottom:0 resolves against just the image -->
       <div style="position:relative;">
-        <img src="assets/ui/PP Screen.png" style="height:calc(560px * var(--scale,1));width:auto;display:block;margin:0 auto;" alt="Post &amp; Pose">
+        <img src="assets/ui/PP Screen.png" style="height:calc(680px * var(--scale,1));width:auto;display:block;margin:0 auto;" alt="Post &amp; Pose">
 
-        <div style="position:absolute;top:44%;left:9%;right:9%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:calc(4px * var(--scale,1));overflow:hidden;">
+        <div style="position:absolute;top:43%;left:9%;right:9%;bottom:12%;display:flex;flex-direction:column;align-items:center;gap:calc(3px * var(--scale,1));overflow:hidden;">
           <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
             style="width:70%;text-align:center;padding:calc(6px * var(--scale,1)) calc(12px * var(--scale,1));border:2px solid #b8832a;border-radius:8px;font-size:calc(15px * var(--scale,1));font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
           <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(12px * var(--scale,1));font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
-          <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:calc(6px * var(--scale,1));flex-shrink:0;"></div>
+          <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:calc(4px * var(--scale,1));flex-shrink:0;"></div>
           <div id="charm-err" style="color:#c0392b;font-size:calc(9px * var(--scale,1));min-height:calc(14px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
           <div style="font-size:calc(7px * var(--scale,1));color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
         </div>
@@ -426,9 +452,114 @@
 <div class="modal-backdrop" id="modal-tnc">
   <div id="tnc-card" style="position:relative;width:calc(347px * var(--scale,1));">
     <img src="assets/ui/T_C.png" style="width:100%;display:block;" alt="Terms and Conditions">
-    <div class="modal-body" id="tnc-body" style="position:absolute;top:22%;bottom:17%;left:11%;right:7%;overflow-y:auto;"></div>
-    <!-- invisible zone over the ✕ button drawn in the image (top-right) -->
-    <div class="tnc-close-zone" style="position:absolute;top:8%;right:0%;width:14%;padding-bottom:9%;cursor:pointer;border-radius:50%;"></div>
+    <div class="modal-body" id="tnc-body" style="position:absolute;top:22%;bottom:17%;left:11%;right:7%;overflow-y:auto;">
+      <div class="tc-content">
+        <h2 class="tc-title">PLAY &amp; WIN CONTEST — TERMS AND CONDITIONS</h2>
+        <p class="tc-org"><strong>Organised by Unigons Global Pte. Ltd.</strong></p>
+
+        <p>By participating in the Play &amp; Win Contest ("Contest"), each participant agrees to be bound by these Terms and Conditions.</p>
+
+        <h3>1. Contest Period</h3>
+        <p>The Contest will commence on 21 August 2026 at 7:00 PM (Singapore Time) and will end on 5 September 2026 at 11:00 PM (Singapore Time) ("Contest Period").</p>
+        <p>Only scores successfully recorded during the Contest Period will be eligible for the Contest.</p>
+
+        <h3>2. Eligibility and Participation</h3>
+        <p>No purchase is necessary to participate in the Contest.</p>
+        <p>The Contest is open to participants using a valid Singapore-registered WhatsApp mobile number.</p>
+        <p>Participants may play the game as many times as they wish during the Contest Period.</p>
+        <p>Each valid mobile number will be treated as a unique participant ID for the purposes of recording scores and determining leaderboard rankings.</p>
+        <p>Participants under 12 years of age may participate only using the mobile number of their parent or legal guardian and with the consent and supervision of that parent or legal guardian. The parent or guardian will be deemed to have agreed to these Terms and Conditions on the child's behalf.</p>
+        <p>Participants are responsible for ensuring that the mobile number and other information submitted are complete and accurate.</p>
+
+        <h3>3. Leaderboard and Winners</h3>
+        <p>At the end of the Contest Period, the three (3) participants with the highest valid scores on the final leaderboard will each win one (1) Limited-Edition Fortune Merlion.</p>
+        <p>Scores and leaderboard positions are subject to verification by the Organiser.</p>
+        <p>The Organiser reserves the right to disqualify any participant or score that it reasonably determines resulted from cheating, manipulation, exploitation of bugs or technical vulnerabilities, automated play, unauthorised software, submission of false information, or any other conduct that compromises the fairness or integrity of the Contest.</p>
+        <p>In the event of a tie affecting the top three positions, the participant who first achieved the relevant final high score, based on the Organiser's system records, will rank higher.</p>
+        <p>The Organiser's determination of the final leaderboard and winners shall be final, subject to applicable law. No correspondence regarding the determination of winners will be entertained.</p>
+
+        <h3>4. Announcement and Notification of Winners</h3>
+        <p>Contest results will be published on Unigonsplay.com.</p>
+        <p>Winners will also be contacted using the WhatsApp mobile number submitted for participation.</p>
+        <p>Participants are responsible for providing a correct and accessible mobile number. The Organiser will not be responsible where a winner cannot be contacted because an incorrect, invalid or inaccessible number was submitted.</p>
+        <p>If a winner cannot be contacted within a reasonable period determined by the Organiser, fails to respond to the prize notification, is found to be ineligible, or fails to collect the prize by the stated deadline, the Organiser may award the prize to the participant with the next highest valid score.</p>
+
+        <h3>5. Prize Collection</h3>
+        <p>Each winner will receive:</p>
+        <ul><li><strong>One (1) Limited-Edition Fortune Merlion</strong></li></ul>
+        <p>Prizes must be collected from:</p>
+        <p>CoPlay, Level 3, Plaza Singapura, Singapore</p>
+        <p>All prizes must be redeemed and collected no later than 30 September 2026.</p>
+        <p>Any prize not collected by this date may be forfeited and offered to the participant with the next highest valid score.</p>
+        <p>The Organiser may require winners to provide reasonable proof of identity and/or proof of ownership or authorised use of the registered mobile number before releasing a prize.</p>
+
+        <h3>6. Prize Conditions</h3>
+        <p>Prizes are not transferable and cannot be exchanged for cash, credit, or any other product or item.</p>
+        <p>No cash alternative will be offered.</p>
+        <p>Winners should inspect their prize at the time of collection. Once a prize has been accepted and collected, the Organiser will not provide an exchange solely for damage or defects discovered after collection, except to the extent otherwise required by applicable law.</p>
+        <p>The Organiser reserves the right, where reasonably necessary due to circumstances beyond its control, to substitute a prize with another prize of comparable value.</p>
+
+        <h3>7. Winner Photography and Publicity</h3>
+        <p>As part of prize collection, winners may be requested to participate in a reasonable prize presentation and photography session.</p>
+        <p>Subject to the winner's consent and applicable law, photographs and/or recordings from the prize presentation may be published on Unigonsplay.com and Uniplay's Instagram account for the purpose of announcing and promoting the Contest and its winners.</p>
+        <p>Where a winner is a minor, the consent of the winner's parent or legal guardian must be obtained before identifiable photographs or recordings of the minor are published.</p>
+
+        <h3>8. Personal Data</h3>
+        <p>By entering the Contest, participants acknowledge that the Organiser may collect, use and process information submitted in connection with the Contest, including their mobile number, game scores and other information reasonably required to administer the Contest.</p>
+        <p>Such information may be used for purposes including:</p>
+        <ul>
+          <li>identifying individual participants and maintaining the leaderboard;</li>
+          <li>verifying scores and eligibility;</li>
+          <li>administering the Contest;</li>
+          <li>contacting and verifying winners;</li>
+          <li>arranging prize collection;</li>
+          <li>preventing fraud, cheating or misuse of the game; and</li>
+          <li>complying with applicable legal and regulatory requirements.</li>
+        </ul>
+        <p>Personal data will be handled in accordance with applicable Singapore data protection laws and the Organiser's applicable privacy policy.</p>
+        <p>Participation in the Contest does not, by itself, constitute consent to receive unrelated marketing communications.</p>
+
+        <h3>9. Technical Issues and Fair Play</h3>
+        <p>The Organiser will take reasonable steps to operate the Contest fairly but does not guarantee uninterrupted or error-free access to the game.</p>
+        <p>To the extent permitted by applicable law, the Organiser will not be responsible for entries or scores that are lost, delayed or not properly recorded because of internet connectivity, device failure, telecommunications issues, system outages or other technical circumstances outside its reasonable control.</p>
+        <p>If a technical error, security incident or other event materially affects the integrity or fair operation of the Contest, the Organiser reserves the right to take reasonable corrective action, including invalidating affected scores, suspending the Contest or modifying the Contest where necessary.</p>
+
+        <h3>10. Liability</h3>
+        <p>Participation in the game and Contest is voluntary and at the participant's own risk.</p>
+        <p>To the fullest extent permitted by applicable law, Unigons Global Pte. Ltd., its organisers, partners, employees and agents will not be liable for any indirect, incidental or consequential loss or damage arising from participation in the Contest, use of the game, acceptance or use of a prize, or attendance at a prize collection or related event.</p>
+        <p>Nothing in these Terms and Conditions is intended to exclude or limit any liability that cannot lawfully be excluded or limited under applicable law, including liability where exclusion is prohibited by law.</p>
+
+        <h3>11. Game Availability After the Contest</h3>
+        <p>The prize competition and leaderboard contest will officially end on 5 September 2026 at 11:00 PM (Singapore Time).</p>
+        <p>The game may remain available to play after the Contest Period. However:</p>
+        <ul>
+          <li>no prizes will be awarded for gameplay or scores achieved after the Contest Period;</li>
+          <li>post-Contest scores will not qualify for the Contest leaderboard; and</li>
+          <li>players will not be required to submit their mobile number for leaderboard participation after the Contest has ended.</li>
+        </ul>
+        <p>Continued availability of the game after the Contest does not constitute an extension or renewal of the Contest.</p>
+
+        <h3>12. General</h3>
+        <p>The Organiser reserves the right to verify participants and scores and to disqualify participation that breaches these Terms and Conditions or compromises the integrity of the Contest.</p>
+        <p>If circumstances outside the Organiser's reasonable control prevent the Contest from operating as intended, the Organiser may reasonably suspend, modify or terminate the Contest, subject to applicable law.</p>
+        <p>If any provision of these Terms and Conditions is found to be invalid or unenforceable, the remaining provisions will continue to apply.</p>
+        <p>These Terms and Conditions shall be governed by the laws of Singapore, and participants submit to the jurisdiction of the courts of Singapore.</p>
+
+        <p class="tc-footer">
+          Organiser: Unigons Global Pte. Ltd.<br>
+          Contest Period: 21 August 2026, 7:00 PM to 5 September 2026, 11:00 PM (Singapore Time)<br>
+          Prize Collection Deadline: 30 September 2026
+        </p>
+        <p>By selecting "I Agree", proceeding to submit a mobile number for Contest participation, or otherwise entering the Contest, the participant confirms that they have read, understood and agreed to these Terms and Conditions.</p>
+      </div>
+    </div>
+    <!-- invisible zone over the ✕ button drawn in the image (top-right).
+         Uses height, not padding-bottom — padding % resolves against the
+         container's WIDTH regardless of axis, so on this non-square card
+         (347×520) that "square hit zone" trick came out short vertically,
+         cutting off the ✕'s lower half. height:11% matches the ring's
+         measured 8.6%-18.2% span with a little padding. -->
+    <div class="tnc-close-zone" style="position:absolute;top:8%;right:0.5%;width:14%;height:11%;cursor:pointer;border-radius:50%;"></div>
     <!-- invisible zone over the CLOSE button drawn in the image (bottom) -->
     <div class="tnc-close-zone" style="position:absolute;bottom:4%;left:21%;right:23%;height:12%;cursor:pointer;border-radius:25px;"></div>
   </div>
@@ -469,7 +600,7 @@ fitGameWrap();
 window.addEventListener('resize', fitGameWrap);
 window.addEventListener('orientationchange', fitGameWrap);
 
-// ── Zone Y-positions (adjust to match where things sit in GAME.jpg) ───────────
+// ── Zone Y-positions (adjust to match where things sit in GAME.png) ───────────
 // Tip: set  debug:true  in Phaser arcade config below, then fine-tune these
 const ZONE_Y = {
   water: [320, 332,343],       // river / waterway band
@@ -543,88 +674,6 @@ function showOv(id){
   _activeOv = id ? document.getElementById(id) : null;
   if(_activeOv) _activeOv.classList.add('on');
 }
-
-// ── Terms & Conditions (verbatim legal text for the T&C modal) ────────────────
-const TNC_TEXT = `PLAY & WIN CONTEST — TERMS AND CONDITIONS
-Organised by Unigons Global Pte. Ltd.
-
-By participating in the Play & Win Contest ("Contest"), each participant agrees to be bound by these Terms and Conditions.
-
-1. Contest Period
-The Contest will commence on 21 August 2026 at 7:00 PM (Singapore Time) and will end on 5 September 2026 at 11:00 PM (Singapore Time) ("Contest Period").
-Only scores successfully recorded during the Contest Period will be eligible for the Contest.
-
-2. Eligibility and Participation
-No purchase is necessary to participate in the Contest.
-The Contest is open to participants using a valid Singapore-registered WhatsApp mobile number.
-Participants may play the game as many times as they wish during the Contest Period.
-Each valid mobile number will be treated as a unique participant ID for the purposes of recording scores and determining leaderboard rankings.
-Participants under 12 years of age may participate only using the mobile number of their parent or legal guardian and with the consent and supervision of that parent or legal guardian. The parent or guardian will be deemed to have agreed to these Terms and Conditions on the child's behalf.
-Participants are responsible for ensuring that the mobile number and other information submitted are complete and accurate.
-
-3. Leaderboard and Winners
-At the end of the Contest Period, the three (3) participants with the highest valid scores on the final leaderboard will each win one (1) Limited-Edition Fortune Merlion.
-Scores and leaderboard positions are subject to verification by the Organiser.
-The Organiser reserves the right to disqualify any participant or score that it reasonably determines resulted from cheating, manipulation, exploitation of bugs or technical vulnerabilities, automated play, unauthorised software, submission of false information, or any other conduct that compromises the fairness or integrity of the Contest.
-In the event of a tie affecting the top three positions, the participant who first achieved the relevant final high score, based on the Organiser's system records, will rank higher.
-The Organiser's determination of the final leaderboard and winners shall be final, subject to applicable law. No correspondence regarding the determination of winners will be entertained.
-
-4. Announcement and Notification of Winners
-Contest results will be published on Unigonsplay.com.
-Winners will also be contacted using the WhatsApp mobile number submitted for participation.
-Participants are responsible for providing a correct and accessible mobile number. The Organiser will not be responsible where a winner cannot be contacted because an incorrect, invalid or inaccessible number was submitted.
-If a winner cannot be contacted within a reasonable period determined by the Organiser, fails to respond to the prize notification, is found to be ineligible, or fails to collect the prize by the stated deadline, the Organiser may award the prize to the participant with the next highest valid score.
-
-5. Prize Collection
-Each winner will receive: One (1) Limited-Edition Fortune Merlion
-Prizes must be collected from: CoPlay, Level 3, Plaza Singapura, Singapore
-All prizes must be redeemed and collected no later than 30 September 2026.
-Any prize not collected by this date may be forfeited and offered to the participant with the next highest valid score.
-The Organiser may require winners to provide reasonable proof of identity and/or proof of ownership or authorised use of the registered mobile number before releasing a prize.
-
-6. Prize Conditions
-Prizes are not transferable and cannot be exchanged for cash, credit, or any other product or item.
-No cash alternative will be offered.
-Winners should inspect their prize at the time of collection. Once a prize has been accepted and collected, the Organiser will not provide an exchange solely for damage or defects discovered after collection, except to the extent otherwise required by applicable law.
-The Organiser reserves the right, where reasonably necessary due to circumstances beyond its control, to substitute a prize with another prize of comparable value.
-
-7. Winner Photography and Publicity
-As part of prize collection, winners may be requested to participate in a reasonable prize presentation and photography session.
-Subject to the winner's consent and applicable law, photographs and/or recordings from the prize presentation may be published on Unigonsplay.com and Uniplay's Instagram account for the purpose of announcing and promoting the Contest and its winners.
-Where a winner is a minor, the consent of the winner's parent or legal guardian must be obtained before identifiable photographs or recordings of the minor are published.
-
-8. Personal Data
-By entering the Contest, participants acknowledge that the Organiser may collect, use and process information submitted in connection with the Contest, including their mobile number, game scores and other information reasonably required to administer the Contest.
-Such information may be used for purposes including: identifying individual participants and maintaining the leaderboard; verifying scores and eligibility; administering the Contest; contacting and verifying winners; arranging prize collection; preventing fraud, cheating or misuse of the game; and complying with applicable legal and regulatory requirements.
-Personal data will be handled in accordance with applicable Singapore data protection laws and the Organiser's applicable privacy policy.
-Participation in the Contest does not, by itself, constitute consent to receive unrelated marketing communications.
-
-9. Technical Issues and Fair Play
-The Organiser will take reasonable steps to operate the Contest fairly but does not guarantee uninterrupted or error-free access to the game.
-To the extent permitted by applicable law, the Organiser will not be responsible for entries or scores that are lost, delayed or not properly recorded because of internet connectivity, device failure, telecommunications issues, system outages or other technical circumstances outside its reasonable control.
-If a technical error, security incident or other event materially affects the integrity or fair operation of the Contest, the Organiser reserves the right to take reasonable corrective action, including invalidating affected scores, suspending the Contest or modifying the Contest where necessary.
-
-10. Liability
-Participation in the game and Contest is voluntary and at the participant's own risk.
-To the fullest extent permitted by applicable law, Unigons Global Pte. Ltd., its organisers, partners, employees and agents will not be liable for any indirect, incidental or consequential loss or damage arising from participation in the Contest, use of the game, acceptance or use of a prize, or attendance at a prize collection or related event.
-Nothing in these Terms and Conditions is intended to exclude or limit any liability that cannot lawfully be excluded or limited under applicable law, including liability where exclusion is prohibited by law.
-
-11. Game Availability After the Contest
-The prize competition and leaderboard contest will officially end on 5 September 2026 at 11:00 PM (Singapore Time).
-The game may remain available to play after the Contest Period. However: no prizes will be awarded for gameplay or scores achieved after the Contest Period; post-Contest scores will not qualify for the Contest leaderboard; and players will not be required to submit their mobile number for leaderboard participation after the Contest has ended.
-Continued availability of the game after the Contest does not constitute an extension or renewal of the Contest.
-
-12. General
-The Organiser reserves the right to verify participants and scores and to disqualify participation that breaches these Terms and Conditions or compromises the integrity of the Contest.
-If circumstances outside the Organiser's reasonable control prevent the Contest from operating as intended, the Organiser may reasonably suspend, modify or terminate the Contest, subject to applicable law.
-If any provision of these Terms and Conditions is found to be invalid or unenforceable, the remaining provisions will continue to apply.
-These Terms and Conditions shall be governed by the laws of Singapore, and participants submit to the jurisdiction of the courts of Singapore.
-
-Organiser: Unigons Global Pte. Ltd.
-Contest Period: 21 August 2026, 7:00 PM to 5 September 2026, 11:00 PM (Singapore Time)
-Prize Collection Deadline: 30 September 2026
-
-By selecting "I Agree", proceeding to submit a mobile number for Contest participation, or otherwise entering the Contest, the participant confirms that they have read, understood and agreed to these Terms and Conditions.`;
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const MOCK_LEADERS = [
@@ -772,7 +821,7 @@ function showCharm(){
     const img = document.createElement('img');
     img.src = `assets/sprites/${c.file}`;
     img.alt = c.label;
-    img.style.cssText = 'height:calc(80px * var(--scale,1));width:auto;display:block;border-radius:8px;pointer-events:none;';
+    img.style.cssText = 'height:calc(68px * var(--scale,1));width:auto;display:block;border-radius:8px;pointer-events:none;';
     wrap.appendChild(img);
     wrap.addEventListener('click', () => {
       grid.querySelectorAll('[data-key]').forEach(el => {
@@ -843,7 +892,7 @@ class PreloadScene extends Phaser.Scene {
     this.load.on('loaderror', e => console.error('[Asset load failed]', e.key, '→', e.src));
 
     // Backgrounds
-    this.load.image('bg_game', 'assets/bg/GAME.jpg');
+    this.load.image('bg_game', 'assets/bg/GAME.png');
 
     // HUD icons
     this.load.image('life',      'assets/sprites/LIFE.png');
@@ -905,17 +954,17 @@ class GameScene extends Phaser.Scene {
 
   create(){
     gameSceneRef = this;
-    // Trophy fades in first, then PLAY and Visit Shop pop in together ~350ms later.
+    // Trophy + shop icon fade in first, then PLAY and Visit Shop pop in together ~350ms later.
     const lbBtn = document.getElementById('btn-leaderboard-title');
     lbBtn.style.visibility = 'visible';
     lbBtn.classList.add('pop-in');
+    const shopIconBtn = document.getElementById('btn-shop-title');
+    shopIconBtn.style.visibility = 'visible';
+    shopIconBtn.classList.add('pop-in');
     const wrap = document.getElementById('play-btn-wrap');
-    const shopBtn = document.getElementById('btn-visit-shop');
     setTimeout(() => {
       wrap.style.visibility = 'visible';
       wrap.classList.add('pop-in');
-      shopBtn.style.visibility = 'visible';
-      shopBtn.classList.add('pop-in-centered');
     }, 350);
     this.state = 'idle';
     this._lastShot = 0;
@@ -1427,8 +1476,6 @@ document.querySelectorAll('.tnc-close-zone').forEach(zone => {
     document.getElementById('modal-tnc').classList.remove('on');
   });
 });
-
-document.getElementById('tnc-body').textContent = TNC_TEXT;
 
 // ── Sound-on prompt (Home screen) ───────────────────────────────────────────
 // Fades out on first tap, or automatically after a few seconds — a static
