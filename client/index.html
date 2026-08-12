@@ -370,7 +370,12 @@
       <div id="leader-list" style="position:absolute;top:28%;bottom:13%;left:15%;right:17%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
-    <div id="leaderboard-btn-row" class="img-btn-row" style="--btn-w:calc(175px * var(--scale,1));margin-top:calc(20px * var(--scale,1));"></div>
+    <!-- height-based (--btn-h, not --btn-w) — Visit Shop's pill has a
+         different aspect ratio than Back to Home/Post & Pose, so sizing by
+         width would make it render a different height (the same bug
+         Post & Pose's own two buttons had). 71px preserves the current
+         visual size of the other two. -->
+    <div id="leaderboard-btn-row" class="img-btn-row" style="--btn-h:calc(71px * var(--scale,1));margin-top:calc(20px * var(--scale,1));"></div>
   </div>
 
   <!-- ── POST & POSE (charm selection) ─────────────────────────────── -->
@@ -701,7 +706,7 @@ const ROW = (rank, name, sc, pink=false) => {
 // Standalone image button (same visual size as PLAY across every screen — see --btn-w)
 function makeImgBtn(src, alt, onClick){
   const wrap = document.createElement('div');
-  wrap.className = 'img-btn';
+  wrap.className = 'img-btn img-btn--h';
   const img = document.createElement('img');
   img.src = src; img.alt = alt;
   wrap.appendChild(img);
@@ -726,6 +731,9 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
   btnRow.appendChild(makeImgBtn('assets/ui/BACK TO HOME.png', 'Back to Home', () => {
     gameSceneRef?._ensureBgmPlaying();
     showOv('ov-title');
+  }));
+  btnRow.appendChild(makeImgBtn('assets/ui/VISIT SHOP.png', 'Visit Shop', () => {
+    window.open('https://www.unigonsplay.com', '_blank', 'noopener');
   }));
   if(fromScore && submittedName){
     btnRow.appendChild(makeImgBtn('assets/ui/POST AND POSE.png', 'Post & Pose', () => showCharm()));

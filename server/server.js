@@ -277,7 +277,7 @@ app.post('/score', limiter10, (req, res) => {
   const count = db.prepare('SELECT COUNT(*) AS cnt FROM scores').get().cnt;
   io.emit('player-count', count);
 
-  res.json({ ok: true, rank, score, isNewBest });
+  res.json({ ok: true, rank, score, isNewBest, name: cleanName });
   } catch(err) {
     console.error('POST /score error:', err.message);
     res.status(500).json({ error: 'Server error — please try again.' });
