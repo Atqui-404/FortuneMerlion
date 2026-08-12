@@ -736,12 +736,14 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
     gameSceneRef?._ensureBgmPlaying();
     showOv('ov-title');
   }));
-  btnRow.appendChild(makeImgBtn('assets/ui/VISIT SHOP.png', 'Visit Shop', () => {
+  const shopBtn = makeImgBtn('assets/ui/VISIT SHOP.png', 'Visit Shop', () => {
     window.open('https://www.unigonsplay.com', '_blank', 'noopener');
-  }));
-  if(fromScore && submittedName){
-    btnRow.appendChild(makeImgBtn('assets/ui/POST AND POSE.png', 'Post & Pose', () => showCharm()));
-  }
+  });
+  shopBtn.style.position = 'relative';
+  shopBtn.style.top = 'calc(-1px * var(--scale,1))';
+  btnRow.appendChild(shopBtn);
+  // Post & Pose button intentionally removed for now — showCharm()/ov-charm
+  // itself is untouched, this just stops offering the entry point here.
 
   try{
     const rows = MOCK
