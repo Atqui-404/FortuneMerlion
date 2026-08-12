@@ -357,12 +357,16 @@
   <div class="ov" id="ov-charm">
     <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
     <!-- Width pinned to the image's own rendered width (not fit-content) so
-         the button row below has real slack to center against. 416/520
-         matches the shared 420×520 box every card overlay uses. -->
-    <div id="charm-card" style="position:relative;z-index:1;width:calc(416px * var(--scale,1));">
+         the button row below has real slack to center against. 448/560 is
+         taller than the shared 420×520 box other cards use — verified the
+         charm-grid (2 rows @ 80px + gaps) + name input + label + error +
+         disclaimer need ~264px, and 520's 291px available was too tight in
+         practice (content spilled past the parchment); 560 gives ~314px
+         available, ~50px of real margin. -->
+    <div id="charm-card" style="position:relative;z-index:1;width:calc(448px * var(--scale,1));">
       <!-- image + overlay share a wrapper so overlay's bottom:0 resolves against just the image -->
       <div style="position:relative;">
-        <img src="assets/ui/PP Screen.png" style="height:calc(520px * var(--scale,1));width:auto;display:block;margin:0 auto;" alt="Post &amp; Pose">
+        <img src="assets/ui/PP Screen.png" style="height:calc(560px * var(--scale,1));width:auto;display:block;margin:0 auto;" alt="Post &amp; Pose">
 
         <div style="position:absolute;top:44%;left:9%;right:9%;bottom:0;display:flex;flex-direction:column;align-items:center;gap:calc(4px * var(--scale,1));overflow:hidden;">
           <input type="text" id="inp-charm-name" maxlength="20" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false"
@@ -374,10 +378,13 @@
         </div>
       </div>
 
-      <!-- img-btn--h: BACK TO HOME.png and POST.png have different pill
-           aspect ratios, so sizing by height (not width) keeps both buttons
-           the same visual size. width:100% gives this row real centering slack. -->
-      <div class="img-btn-row" style="width:100%;--btn-h:calc(73px * var(--scale,1));margin-top:calc(-4px * var(--scale,1));margin-bottom:calc(26px * var(--scale,1));">
+      <!-- img-btn--h sizes by height so BACK TO HOME/POST render the same
+           size despite different pill ratios. width:fit-content+margin:auto
+           centers the pair as a unit — unlike Scoreboard/Leaderboard's rows
+           (direct .ov flex children, centered for free), this row sits in
+           charm-card, a plain block div, so width:100% just filled it edge
+           to edge instead of centering. -->
+      <div class="img-btn-row" style="width:fit-content;margin:calc(-4px * var(--scale,1)) auto calc(26px * var(--scale,1));--btn-h:calc(73px * var(--scale,1));">
         <div id="btn-charm-home" class="img-btn img-btn--h"><img src="assets/ui/BACK TO HOME.png" alt="Back to Home"></div>
         <div id="btn-post-charm" class="img-btn img-btn--h"><img src="assets/ui/POST.png" alt="Post"></div>
       </div>
@@ -837,11 +844,6 @@ class PreloadScene extends Phaser.Scene {
 
     // Backgrounds
     this.load.image('bg_game', 'assets/bg/GAME.jpg');
-
-    // UI panels/images
-    this.load.image('ui_logo',   'assets/ui/GAME LOGO.png');
-    this.load.image('ui_finish', 'assets/ui/FINISH.png');
-    this.load.image('ui_leader', 'assets/ui/LEADERBOARD.png');
 
     // HUD icons
     this.load.image('life',      'assets/sprites/LIFE.png');
@@ -1328,10 +1330,12 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   try{
     const res = await apiPost('/score', { name, phone, score });
     if(res.ok){
-      submittedName = name;
-      // res.score/res.rank reflect THIS attempt specifically (not necessarily the
-      // player's all-time best) — always use these, never a locally-cached value.
-      showLeaderboard(name, res.score, res.rank, true, res.isNewBest);
+      // res.name is the server's title-cased version — using the raw typed
+      // `name` here was why multi-word names showed uncapitalized on this
+      // player's own leaderboard row (the top-5 rows were always fine,
+      // since those come from a fresh GET /leaderboard fetch instead).
+      submittedName = res.name;
+      showLeaderboard(res.name, res.score, res.rank, true, res.isNewBest);
     } else {
       errEl.textContent = escHtml(res.error || 'Something went wrong.');
     }
@@ -1374,8 +1378,17 @@ document.getElementById('btn-post-charm').addEventListener('click', async () => 
   const btn = document.getElementById('btn-post-charm');
   btn.style.pointerEvents = 'none'; btn.style.opacity = '0.5';
   try{
-    await apiPost('/charm', { name, charm: selectedCharm });
-  } catch(e){ /* fire-and-forget — still show finish screen */ }
+    const res = await apiPost('/charm', { name, charm: selectedCharm });
+    if(!res.ok){
+      errEl.textContent = escHtml(res.error || 'Something went wrong.');
+      btn.style.pointerEvents = 'auto'; btn.style.opacity = '1';
+      return;
+    }
+  } catch(e){
+    errEl.textContent = 'Network error — check your connection.';
+    btn.style.pointerEvents = 'auto'; btn.style.opacity = '1';
+    return;
+  }
   showOv('ov-finish');
 });
 
