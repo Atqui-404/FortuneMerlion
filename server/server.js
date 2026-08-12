@@ -249,7 +249,7 @@ app.post('/score', limiter10, (req, res) => {
     return res.status(400).json({ error: 'Invalid score' });
  
   if (containsProfanity(name))
-    return res.status(400).json({ error: 'That name isn\'t allowed — please choose a different one.' });
+    return res.status(400).json({ error: 'That name is not allowed — please choose a different one.' });
 
   const cleanName = titleCase(stripHtml(name.trim()));
 

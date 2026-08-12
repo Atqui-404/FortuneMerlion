@@ -222,9 +222,13 @@
     .modal-body .tc-footer{ margin-top:calc(12px * var(--scale,1)); }
 
     /* ── Sound-on prompt (Home screen) ──────────────────────────────── */
+    /* calc(px*var(--scale)), same convention as the rest of the UI — tracks
+       game-wrap's actual computed scale directly, rather than a raw % of
+       the container (which drifts slightly out of sync on edge-case sizes
+       since it isn't driven by the same --scale value everything else is). */
     #sound-prompt{
       position:absolute; left:50%; top:1.5%; transform:translateX(-50%);
-      width:82%; max-width:320px; cursor:pointer;
+      width:calc(320px * var(--scale,1)); cursor:pointer;
       transition:opacity .4s ease;
     }
     #sound-prompt img{ width:100%; display:block; pointer-events:none; }
@@ -404,8 +408,8 @@
             style="width:70%;text-align:center;padding:calc(6px * var(--scale,1)) calc(12px * var(--scale,1));border:2px solid #b8832a;border-radius:8px;font-size:calc(15px * var(--scale,1));font-weight:900;font-family:'Arial Rounded MT Bold',Arial,sans-serif;background:#fffbf0;color:#3a1500;outline:none;flex-shrink:0;">
           <div style="font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(12px * var(--scale,1));font-weight:900;color:#6b3c10;letter-spacing:2px;flex-shrink:0;">— PICK YOUR CHARM —</div>
           <div id="charm-grid" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:calc(4px * var(--scale,1));flex-shrink:0;"></div>
-          <div id="charm-err" style="color:#c0392b;font-size:calc(9px * var(--scale,1));min-height:calc(14px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
-          <div style="font-size:calc(7px * var(--scale,1));color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
+          <div id="charm-err" style="color:#c0392b;font-size:calc(11px * var(--scale,1));min-height:calc(16px * var(--scale,1));font-family:'Arial Rounded MT Bold',Arial,sans-serif;flex-shrink:0;"></div>
+          <div style="font-size:calc(9px * var(--scale,1));color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;line-height:1.4;text-align:center;flex-shrink:0;">YOUR CHARM WILL BE LIVE ON THE FORTUNE MERLION<br>IN THE NEXT <span id="charm-eta" style="color:#e91e8c;font-weight:900;">5 MINUTES</span></div>
         </div>
       </div>
 
@@ -829,7 +833,7 @@ function showCharm(){
     const img = document.createElement('img');
     img.src = `assets/sprites/${c.file}`;
     img.alt = c.label;
-    img.style.cssText = 'height:calc(68px * var(--scale,1));width:auto;display:block;border-radius:8px;pointer-events:none;';
+    img.style.cssText = 'height:calc(76px * var(--scale,1));width:auto;display:block;border-radius:8px;pointer-events:none;';
     wrap.appendChild(img);
     wrap.addEventListener('click', () => {
       grid.querySelectorAll('[data-key]').forEach(el => {
