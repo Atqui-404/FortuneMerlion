@@ -251,6 +251,12 @@
 <body>
 <div id="game-wrap">
 
+  <!-- Shared blurred Home.PNG backdrop for Post & Pose / Finish / Contest —
+       one decoded instance reused via display toggle in showOv(), instead
+       of each screen decoding its own separate copy (was costing ~6MB
+       decoded memory per duplicate, ~18MB redundant total). -->
+  <div id="shared-blur-bg" style="position:absolute;inset:0;z-index:99;display:none;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
+
   <!-- ── HUD: lives | timer | score ─────────────────────────────── -->
   <div id="hud">
     <div id="hud-lives"></div>
@@ -387,7 +393,6 @@
        height at its own aspect ratio. Button row is a sibling AFTER it, so
        it always renders below regardless of overlay content height. -->
   <div class="ov" id="ov-charm">
-    <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
     <!-- Width pinned to the image's own rendered width (not fit-content) so
          the button row below has real slack to center against.
          top:44%/bottom:0 on the content overlay was wrong — measured
@@ -428,7 +433,6 @@
 
   <!-- ── FINISH (published confirmation) ───────────────────────────── -->
   <div class="ov" id="ov-finish">
-    <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
     <div style="position:relative;z-index:1;width:calc(416px * var(--scale,1));">
       <img src="assets/ui/FINISH.png" style="width:100%;display:block;" alt="Published">
       <!-- invisible zone over the CLOSED button drawn in the PNG -->
@@ -438,7 +442,6 @@
 
   <!-- ── CONTEST ANNOUNCEMENT — gated by isContestActive(), before How To Play ── -->
   <div class="ov" id="ov-contest">
-    <div style="position:absolute;inset:0;background:url('assets/bg/Home.PNG') center/cover no-repeat;filter:blur(4px);transform:scale(1.06);"></div>
     <div id="contest-card" style="position:relative;z-index:1;width:calc(347px * var(--scale,1));">
       <img src="assets/ui/CONTEST.png" style="width:100%;display:block;" alt="Play and Win Contest">
       <!-- invisible zone over the ✕ button drawn in the image (top-right) -->
@@ -678,10 +681,14 @@ function escHtml(s){
 }
 
 let _activeOv = null;
+// Screens that render their own content directly over the shared blurred
+// Home.PNG backdrop (#shared-blur-bg) instead of a solid/tinted background.
+const BLUR_BG_SCREENS = new Set(['ov-charm', 'ov-finish', 'ov-contest']);
 function showOv(id){
   if(_activeOv) _activeOv.classList.remove('on');
   _activeOv = id ? document.getElementById(id) : null;
   if(_activeOv) _activeOv.classList.add('on');
+  document.getElementById('shared-blur-bg').style.display = BLUR_BG_SCREENS.has(id) ? 'block' : 'none';
 }
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
