@@ -376,8 +376,15 @@
   <div class="ov" id="ov-leaderboard" style="background:rgba(0,0,0,.6);">
     <div id="leaderboard-card" style="position:relative;width:calc(420px * var(--scale,1));">
       <img src="assets/ui/NEW LEADER.png" style="width:100%;display:block;" alt="Leaderboard">
-      <!-- scores injected here, centred in the blank parchment area of the image -->
-      <div id="leader-list" style="position:absolute;top:28%;bottom:13%;left:15%;right:17%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
+      <!-- scores injected here, centred in the blank parchment area of the image.
+           bottom raised from 13% to 29% to make dedicated room for the contest-
+           period notice below, so it never overlaps the list regardless of row count. -->
+      <div id="leader-list" style="position:absolute;top:28%;bottom:29%;left:15%;right:17%;display:flex;flex-direction:column;justify-content:flex-start;gap:calc(4px * var(--scale,1));padding-top:calc(5px * var(--scale,1));overflow:hidden;box-sizing:border-box;"></div>
+      <!-- left/right widened from 12% to 25% — measured the leaf clusters
+           on NEW LEADER.png directly, they extend inward to ~23% on each
+           side, so 12% was letting the text reach into the leaves. The
+           narrower column also wraps to 3 shorter lines instead of 2 long ones. -->
+      <div style="position:absolute;top:72%;bottom:14%;left:25%;right:25%;display:flex;align-items:center;justify-content:center;font-size:calc(7.5px * var(--scale,1));line-height:1.35;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;text-align:center;">THE CONTEST RUNS FROM 7 PM ON 21 AUGUST TO 11 PM ON 5 SEPTEMBER 2026. ONLY SCORES RECORDED DURING THIS PERIOD ARE ELIGIBLE FOR PRIZES.</div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
     <!-- height-based (--btn-h, not --btn-w) — Visit Shop's pill has a
