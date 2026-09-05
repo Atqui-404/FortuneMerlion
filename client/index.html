@@ -120,6 +120,18 @@
     }
     .btn-row{display:flex;gap:calc(14px * var(--scale,1));justify-content:center;margin-top:calc(16px * var(--scale,1));}
 
+    /* ── Contest-ended banner (Home + Leaderboard) ──────────────────── */
+    .contest-ended-banner{
+      background:linear-gradient(180deg,#e06060,#c0392b);
+      color:#fff; border:calc(2px * var(--scale,1)) solid #922b21;
+      border-radius:calc(12px * var(--scale,1));
+      box-shadow:0 3px 0 #6e1e14;
+      padding:calc(8px * var(--scale,1)) calc(12px * var(--scale,1));
+      font-family:'Arial Rounded MT Bold',Arial,sans-serif; font-weight:bold;
+      font-size:calc(9.5px * var(--scale,1)); line-height:1.35; text-align:center;
+      text-wrap:pretty;
+    }
+
     /* ── Entry form ──────────────────────────────────────────────── */
     /* calc(REFpx*var(--scale)) throughout so text shrinks with a small game-wrap too. */
     .form-g{margin-bottom:calc(6px * var(--scale,1));text-align:center;}
@@ -289,6 +301,16 @@
        frame), not fixed px, so they scale with game-wrap on any device. -->
   <div class="ov on" id="ov-title">
     <img src="assets/ui/GAME LOGO.png" style="position:absolute;left:16.67%;top:12.44%;width:66.66%;pointer-events:none;" alt="Fortune Merlion: Blooming Hearts">
+    <!-- Shown only once isContestOver() — sits in the gap between the logo's
+         real visible art (ends ~55%) and PLAY's visible pill (starts ~66%). -->
+    <!-- top:60.5% + translateY(-50%) centers the box (whatever its rendered
+         height ends up being) on the midpoint of the 55%-66% gap, rather than
+         anchoring its top edge at a fixed point. -->
+    <!-- font-size/width overridden here (not in .contest-ended-banner itself)
+         so this bump to bigger/3-line text is Home-only — the Leaderboard
+         banner keeps the shared class's smaller default. Narrower box at a
+         bigger font wraps the same sentence to 3 lines instead of 2. -->
+    <div class="contest-ended-banner" id="contest-ended-home" style="position:absolute;top:60.5%;left:16%;right:16%;transform:translateY(-50%);font-size:calc(12px * var(--scale,1));display:none;">The Blooming Hearts Contest has ended. Thank you for playing! Top three winners will be contacted via WhatsApp.</div>
     <!-- wrapper so we can overlay a precise hit zone over the button visual -->
     <div id="play-btn-wrap" style="position:absolute;left:18.75%;top:51.46%;width:62.49%;visibility:hidden;">
       <img src="assets/ui/PLAY.png" style="width:100%;display:block;pointer-events:none;" alt="Play">
@@ -384,7 +406,9 @@
            on NEW LEADER.png directly, they extend inward to ~23% on each
            side, so 12% was letting the text reach into the leaves. The
            narrower column also wraps to 3 shorter lines instead of 2 long ones. -->
-      <div style="position:absolute;top:72%;bottom:14%;left:25%;right:25%;display:flex;align-items:center;justify-content:center;text-wrap:pretty;font-size:calc(7.5px * var(--scale,1));line-height:1.35;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;text-align:center;">THE CONTEST RUNS FROM 7 PM ON 21 AUGUST TO 11 PM ON 5 SEPTEMBER 2026. ONLY SCORES RECORDED DURING THIS PERIOD ARE ELIGIBLE FOR&nbsp;PRIZES.</div>
+      <div id="contest-running-notice" style="position:absolute;top:72%;bottom:14%;left:25%;right:25%;display:flex;align-items:center;justify-content:center;text-wrap:pretty;font-size:calc(7.5px * var(--scale,1));line-height:1.35;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-weight:bold;text-align:center;">THE CONTEST RUNS FROM 7 PM ON 21 AUGUST TO 11 PM ON 5 SEPTEMBER 2026. ONLY SCORES RECORDED DURING THIS PERIOD ARE ELIGIBLE FOR&nbsp;PRIZES.</div>
+      <!-- mutually exclusive with #contest-running-notice above — toggled in showLeaderboard() -->
+      <div class="contest-ended-banner" id="contest-ended-leaderboard" style="position:absolute;top:72%;bottom:14%;left:20%;right:20%;display:none;align-items:center;justify-content:center;">The Blooming Hearts Contest has ended. Thank you for playing! Top three winners will be contacted via WhatsApp.</div>
     </div>
     <!-- populated in JS: Back to Home always; Post & Pose only when reached after a score submission -->
     <!-- height-based (--btn-h, not --btn-w) — Visit Shop's pill has a
@@ -601,6 +625,11 @@ const CONTEST_END = new Date('2026-09-05T23:00:00+08:00');
 function isContestActive(){
   return new Date() <= CONTEST_END;
 }
+function isContestOver(){
+  return new Date() > CONTEST_END;
+}
+// Home screen banner is static — set once, no need to re-check per screen-show.
+document.getElementById('contest-ended-home').style.display = isContestOver() ? 'block' : 'none';
 
 // ── Responsive fit (JS, not CSS) ────────────────────────────────────────────
 // Backs up the CSS min() sizing — some mobile browsers don't support min()
@@ -741,6 +770,10 @@ async function showLeaderboard(playerName=null, playerScore=null, playerRank=nul
   showOv('ov-leaderboard');
   const card = document.getElementById('leaderboard-card');
   card.classList.remove('pop-in'); void card.offsetWidth; card.classList.add('pop-in');
+  // Mutually exclusive: the "contest running" notice while active, the
+  // "contest ended" banner once over — never both at once.
+  document.getElementById('contest-running-notice').style.display = isContestOver() ? 'none' : 'flex';
+  document.getElementById('contest-ended-leaderboard').style.display = isContestOver() ? 'flex' : 'none';
   const listEl = document.getElementById('leader-list');
   listEl.innerHTML = `<div style="text-align:center;color:#7b5020;font-family:'Arial Rounded MT Bold',Arial,sans-serif;font-size:calc(13px * var(--scale,1));margin-top:calc(24px * var(--scale,1));">Loading…</div>`;
 
