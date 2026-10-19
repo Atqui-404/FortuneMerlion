@@ -89,4 +89,4 @@ The event has ended and the project is in maintenance / handoff. Ownership of th
  
 ## Credits
  
-Built by Cheryl for UnigonPlays. Assets designed by UnigonPlays Team in Vietnam.
+Built by Cheryl for UnigonsPlay. Assets designed by UnigonPlays Team in Vietnam.
